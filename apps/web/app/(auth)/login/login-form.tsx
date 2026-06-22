@@ -1,0 +1,95 @@
+'use client'
+
+import { useTransition } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import { toast } from 'sonner'
+import { Loader2 } from 'lucide-react'
+import { signIn } from '@/lib/actions/auth'
+import { Input } from '@/components/ui/input'
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+
+const schema = z.object({
+  email: z.string().email('Enter a valid email'),
+  password: z.string().min(1, 'Password is required'),
+})
+type FormValues = z.infer<typeof schema>
+
+export function LoginForm() {
+  const [pending, startTransition] = useTransition()
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: { email: '', password: '' },
+  })
+
+  function onSubmit(values: FormValues) {
+    startTransition(async () => {
+      const fd = new FormData()
+      fd.set('email', values.email)
+      fd.set('password', values.password)
+      const result = await signIn(fd)
+      if (result?.error) {
+        toast.error(result.error)
+      }
+    })
+  }
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-xs font-semibold uppercase tracking-wide text-charcoal-600">
+                Email address
+              </FormLabel>
+              <FormControl>
+                <Input
+                  type="email"
+                  placeholder="you@eigensu.com"
+                  autoComplete="email"
+                  className="h-[42px] border-border focus-visible:ring-navy/40 focus-visible:border-navy"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="password"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-xs font-semibold uppercase tracking-wide text-charcoal-600">
+                Password
+              </FormLabel>
+              <FormControl>
+                <Input
+                  type="password"
+                  placeholder="••••••••"
+                  autoComplete="current-password"
+                  className="h-[42px] border-border focus-visible:ring-navy/40 focus-visible:border-navy"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <button
+          type="submit"
+          disabled={pending}
+          className="mt-2 w-full h-11 rounded-lg bg-navy text-white text-sm font-semibold tracking-wide transition-colors hover:bg-navy-hover disabled:opacity-60 flex items-center justify-center gap-2"
+        >
+          {pending && <Loader2 className="h-4 w-4 animate-spin" />}
+          Sign in
+        </button>
+      </form>
+    </Form>
+  )
+}

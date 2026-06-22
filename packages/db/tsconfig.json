@@ -1,0 +1,7 @@
+{
+  "extends": "@eigensu/config/tsconfig",
+  "compilerOptions": {
+    "outDir": "./dist"
+  },
+  "include": ["src/**/*", "seed.ts"]
+}

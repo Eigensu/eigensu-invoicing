@@ -1,0 +1,17 @@
+{
+  "name": "@eigensu/email",
+  "version": "0.0.1",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "resend": "^4.0.1",
+    "@react-email/components": "^0.0.27",
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@eigensu/config": "workspace:*",
+    "typescript": "^5.7.2"
+  }
+}
