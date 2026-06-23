@@ -91,7 +91,7 @@ export function ClientFormDialog({ open, onOpenChange, client, onSuccess }: Prop
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="phone">Phone</Label>
-                <Input id="phone" {...register('phone')} placeholder="+91 98765 XXXXX" />
+                <Input id="phone" {...register('phone')} placeholder="+91 XXXXX XXXXX" />
               </div>
             </div>
             <div className="space-y-1.5">

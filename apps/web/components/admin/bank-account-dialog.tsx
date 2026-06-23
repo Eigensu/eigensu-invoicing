@@ -91,14 +91,14 @@ export function BankAccountDialog({ children, account }: Props) {
               </div>
               <div className="space-y-1.5">
                 <Label>Account Holder</Label>
-                <Input {...register('holderName')} placeholder="Eigensu Solutions Pvt Ltd" />
+                <Input {...register('holderName')} placeholder="Account holder name" />
                 {errors.holderName && (
                   <p className="text-xs text-red-500">{errors.holderName.message}</p>
                 )}
               </div>
               <div className="space-y-1.5">
                 <Label>Account Number</Label>
-                <Input {...register('accountNumber')} placeholder="[PLACEHOLDER]" />
+                <Input {...register('accountNumber')} placeholder="Account number" />
                 {errors.accountNumber && (
                   <p className="text-xs text-red-500">{errors.accountNumber.message}</p>
                 )}
@@ -110,7 +110,7 @@ export function BankAccountDialog({ children, account }: Props) {
               </div>
               <div className="space-y-1.5">
                 <Label>UPI ID (optional)</Label>
-                <Input {...register('upiId')} placeholder="eigensu@upi" />
+                <Input {...register('upiId')} placeholder="yourname@bankname" />
               </div>
             </div>
             <div className="flex items-center gap-2">

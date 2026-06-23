@@ -5,13 +5,11 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useTransition } from 'react'
 import {
   LayoutDashboard,
-  Users,
-  FolderKanban,
-  FileText,
-  CreditCard,
+  LayoutList,
   Bell,
   Settings,
   LogOut,
+  Plus,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { signOut } from '@/lib/actions/auth'
@@ -20,15 +18,18 @@ interface NavItem {
   label: string
   href: string
   icon: React.ElementType
+  matchPaths?: string[]
 }
 
 const MAIN_NAV: NavItem[] = [
-  { label: 'Dashboard',  href: '/dashboard', icon: LayoutDashboard },
-  { label: 'Clients',    href: '/clients',   icon: Users },
-  { label: 'Projects',   href: '/projects',  icon: FolderKanban },
-  { label: 'Invoices',   href: '/invoices',  icon: FileText },
-  { label: 'Payments',   href: '/payments',  icon: CreditCard },
-  { label: 'Reminders',  href: '/reminders', icon: Bell },
+  { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  {
+    label: 'Records',
+    href: '/records',
+    icon: LayoutList,
+    matchPaths: ['/clients', '/projects', '/invoices', '/payments'],
+  },
+  { label: 'Reminders', href: '/reminders', icon: Bell },
 ]
 
 const ADMIN_NAV: NavItem[] = [
@@ -54,7 +55,10 @@ function avatarInitials(name: string, email: string): string {
 }
 
 function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
-  const active = pathname === item.href || pathname.startsWith(`${item.href}/`)
+  const active =
+    pathname === item.href ||
+    pathname.startsWith(`${item.href}/`) ||
+    (item.matchPaths?.some((p) => pathname === p || pathname.startsWith(`${p}/`)) ?? false)
 
   return (
     <Link
@@ -113,7 +117,23 @@ export function Sidebar({ role, name, email }: SidebarProps) {
 
       {/* Main nav */}
       <nav className="flex-1 overflow-y-auto py-3 space-y-0.5">
-        <p className="px-6 pt-2 pb-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-charcoal-400">
+        {/* New Engagement CTA */}
+        <div className="px-3 pb-3 pt-1">
+          <Link
+            href="/engagements/new"
+            className={cn(
+              'flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-150',
+              pathname === '/engagements/new'
+                ? 'bg-sky text-white'
+                : 'bg-sky/20 text-sky hover:bg-sky/30',
+            )}
+          >
+            <Plus className="h-4 w-4 shrink-0" />
+            New Engagement
+          </Link>
+        </div>
+
+        <p className="px-6 pt-1 pb-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-charcoal-400">
           Main
         </p>
         {MAIN_NAV.map((item) => (

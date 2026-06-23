@@ -9,9 +9,10 @@ import { cn } from '@/lib/utils'
 interface Props {
   q?: string
   status?: string
+  basePath?: string
 }
 
-export function ClientFilters({ q, status }: Props) {
+export function ClientFilters({ q, status, basePath = '/clients' }: Props) {
   const router = useRouter()
   const showArchived = status === 'archived'
 
@@ -22,14 +23,14 @@ export function ClientFilters({ q, status }: Props) {
     const params = new URLSearchParams()
     if (query) params.set('q', query)
     if (showArchived) params.set('status', 'archived')
-    router.push(`/clients?${params.toString()}`)
+    router.push(`${basePath}?${params.toString()}`)
   }
 
   function statusHref(s: 'active' | 'archived') {
     const params = new URLSearchParams()
     if (q) params.set('q', q)
     if (s === 'archived') params.set('status', 'archived')
-    return `/clients?${params.toString()}`
+    return `${basePath}?${params.toString()}`
   }
 
   return (

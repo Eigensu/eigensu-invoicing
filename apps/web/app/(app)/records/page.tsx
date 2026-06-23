@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
 
-export default function ClientsPage() {
+export default function RecordsPage() {
   redirect('/records/clients')
 }

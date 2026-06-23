@@ -4,12 +4,8 @@ import { createClient } from '@supabase/supabase-js'
 import { db } from './src/client'
 import {
   settings,
-  bankAccounts,
   reminderRules,
   users,
-  clients,
-  projects,
-  scheduleItems,
 } from './src/schema'
 
 const supabaseAdmin = createClient(
@@ -30,16 +26,12 @@ async function inviteFounder(email: string, name: string) {
 async function main() {
   console.log('Seeding database...')
 
-  // Settings
+  // Base settings — fill in company details via Admin → Settings after first login
   await db
     .insert(settings)
     .values({
       companyName: 'Eigensu',
-      address: '42 Tech Park, Whitefield, Bengaluru, Karnataka 560066',
-      phone: '+91 98765 00000',
-      email: 'billing@eigensu.in',
-      logoUrl: null,
-      defaultTaxPercent: '18',
+      defaultTaxPercent: '0',
       defaultCurrency: 'INR',
       invoiceNumberFormat: 'XXXX/YY',
       defaultDueDays: 30,
@@ -50,20 +42,6 @@ async function main() {
     })
     .onConflictDoNothing()
   console.log('✓ Settings')
-
-  // Default bank account (test values — replace before going live)
-  const [bankAccount] = await db
-    .insert(bankAccounts)
-    .values({
-      holderName: 'Eigensu Solutions Pvt Ltd',
-      accountNumber: 'TEST00000001',
-      ifsc: 'HDFC0001234',
-      upiId: 'eigensu@hdfcbank',
-      label: 'HDFC Current (Test)',
-      isDefault: true,
-    })
-    .returning()
-  console.log('✓ Bank account')
 
   // Reminder rules
   await db
@@ -123,7 +101,7 @@ async function main() {
     .onConflictDoNothing()
   console.log('✓ Reminder rules')
 
-  // Founders
+  // Admin user — add your own details here before running
   const founderData = [
     { email: 'work.eigensu@gmail.com', name: 'Aanshuvi Shah' },
   ]
@@ -136,71 +114,8 @@ async function main() {
   }
   console.log('✓ Users + invites sent')
 
-  // Demo data
-  if (process.env['SEED_DEMO'] === 'true') {
-    const [client] = await db
-      .insert(clients)
-      .values({
-        name: 'Binge Consulting',
-        email: 'billing@bingeconsulting.com',
-        contactPerson: 'Demo Contact',
-        phone: '[CLIENT_PHONE]',
-        billingAddress: '[CLIENT_ADDRESS]',
-      })
-      .returning()
-    if (!client) throw new Error('Failed to insert demo client')
-
-    const [project] = await db
-      .insert(projects)
-      .values({
-        clientId: client.id,
-        name: 'Recruitr',
-        description: 'Recruitment platform build',
-        paymentModel: 'installments',
-        totalValue: '150000',
-        startDate: new Date().toISOString().split('T')[0]!,
-      })
-      .returning()
-    if (!project) throw new Error('Failed to insert demo project')
-
-    const today = new Date()
-    const m1 = new Date(today); m1.setDate(m1.getDate() + 30)
-    const m2 = new Date(today); m2.setDate(m2.getDate() + 60)
-    const m3 = new Date(today); m3.setDate(m3.getDate() + 90)
-
-    await db.insert(scheduleItems).values([
-      {
-        projectId: project.id,
-        type: 'installment',
-        label: '1st Installment — Design & Discovery',
-        amount: '50000',
-        dueDate: m1.toISOString().split('T')[0]!,
-        recurrence: 'none',
-      },
-      {
-        projectId: project.id,
-        type: 'installment',
-        label: '2nd Installment — Development',
-        amount: '60000',
-        dueDate: m2.toISOString().split('T')[0]!,
-        recurrence: 'none',
-      },
-      {
-        projectId: project.id,
-        type: 'installment',
-        label: '3rd Installment — Launch & Handover',
-        amount: '40000',
-        dueDate: m3.toISOString().split('T')[0]!,
-        recurrence: 'none',
-      },
-    ])
-    console.log('✓ Demo client + project + schedule items')
-    if (bankAccount) {
-      console.log('  (bank account available for demo invoices:', bankAccount.id, ')')
-    }
-  }
-
   console.log('\nSeed complete.')
+  console.log('Next: log in and go to Admin → Settings to fill in company info and bank account.')
   process.exit(0)
 }
 

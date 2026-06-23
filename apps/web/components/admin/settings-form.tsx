@@ -41,7 +41,7 @@ export function SettingsForm({ settings }: Props) {
       phone: settings?.phone ?? '',
       email: settings?.email ?? '',
       logoUrl: settings?.logoUrl ?? '',
-      defaultTaxPercent: Number(settings?.defaultTaxPercent ?? 18),
+      defaultTaxPercent: Number(settings?.defaultTaxPercent ?? 0),
       defaultCurrency: settings?.defaultCurrency ?? 'INR',
       invoiceNumberFormat: settings?.invoiceNumberFormat ?? 'XXXX/YY',
       defaultDueDays: settings?.defaultDueDays ?? 30,
@@ -89,13 +89,13 @@ export function SettingsForm({ settings }: Props) {
         <h3 className="text-sm font-semibold text-slate-900">Company Info</h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="Company Name" error={errors.companyName?.message}>
-            <Input {...register('companyName')} placeholder="Eigensu Solutions Pvt Ltd" />
+            <Input {...register('companyName')} placeholder="Your Company Name" />
           </Field>
           <Field label="Company Email" error={errors.email?.message}>
-            <Input {...register('email')} type="email" placeholder="billing@eigensu.in" />
+            <Input {...register('email')} type="email" placeholder="billing@yourcompany.com" />
           </Field>
           <Field label="Phone" error={errors.phone?.message}>
-            <Input {...register('phone')} placeholder="+91 98765 43210" />
+            <Input {...register('phone')} placeholder="+91 XXXXX XXXXX" />
           </Field>
           <Field label="Logo URL" error={errors.logoUrl?.message}>
             <Input {...register('logoUrl')} placeholder="https://..." />
