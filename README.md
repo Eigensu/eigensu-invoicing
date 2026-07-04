@@ -4,21 +4,22 @@ Internal invoice and receivables management for Eigensu consulting.
 
 ## First-time setup
 
-1. Create a Supabase project (Postgres + Auth + Storage)
-2. Create two Storage buckets: `invoices` (private) and `branding` (public)
+1. Create a Railway Postgres database and note its connection URL
+2. Create a Cloudinary account (company-logo uploads) and note the cloud name + API key/secret
 3. Sign up for Resend and get an API key
 4. Deploy to Vercel (Pro plan required for Cron)
 5. Clone this repo and run:
 
    ```
    cp .env.example .env
-   # Fill all values in .env
+   # Fill all values in .env (AUTH_SECRET: openssl rand -base64 32)
    pnpm install
-   pnpm db:generate && pnpm db:migrate
-   pnpm --filter @eigensu/db seed          # sends founder invite emails
+   pnpm db:migrate
+   pnpm --filter @eigensu/db seed          # prints founder set-password links
    ```
 
-6. Founders accept invite emails and set passwords
+6. Founders open the printed set-password links and choose passwords
+   (or set `SEED_FOUNDER_PASSWORD` before seeding to skip that step)
 7. `pnpm dev` (local) or deploy to Vercel
 
 ## Key commands

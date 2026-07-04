@@ -1,6 +1,6 @@
 # Deployment Guide — Eigensu Billing
 
-Production stack: **Vercel** (Next.js), **Supabase** (PostgreSQL + Auth), **Resend** (email). No additional servers needed.
+Production stack: **Vercel** (Next.js), **Railway** (PostgreSQL), **NextAuth** (credentials auth), **Cloudinary** (logo storage), **Resend** (email). No additional servers needed.
 
 ---
 
@@ -9,7 +9,8 @@ Production stack: **Vercel** (Next.js), **Supabase** (PostgreSQL + Auth), **Rese
 | Service | What you need |
 |---|---|
 | GitHub | Push the repo to a GitHub account |
-| Supabase | Project already created; note the DB URL and keys |
+| Railway | A Postgres database; note the public connection URL |
+| Cloudinary | Free account; note cloud name, API key, API secret |
 | Resend | API key + a verified sender domain |
 | Vercel | Free or Pro account |
 
@@ -26,26 +27,28 @@ gh repo create eigensu-billing --private --source=. --push
 
 ---
 
-## 3. Run DB Migrations Against Production
+## 3. Set Up the Database (Railway)
 
-Point your local `.env` at the **production** Supabase DB URL, then:
+Fresh setup: create a Railway Postgres service, copy its **public** connection
+URL into `DATABASE_URL` in your local `.env`, then from the monorepo root:
 
 ```bash
-pnpm db:migrate
+pnpm db:migrate                  # applies all migrations in packages/db/migrations/
+pnpm --filter @eigensu/db seed   # idempotent: settings, reminder rules, bank account, founders
 ```
 
-Switch the `.env` back to local when done. Migrations are in `packages/db/drizzle/`.
+The seed prints a set-password URL for each founder (or seeds a password
+directly when `SEED_FOUNDER_PASSWORD` is set). Running the seed again is a
+no-op. Switch the `.env` back to local values when done.
 
 ---
 
-## 4. Configure Supabase Auth for Production
+## 4. Auth Configuration
 
-In the **Supabase Dashboard → Authentication → URL Configuration**:
-
-- **Site URL**: `https://your-domain.vercel.app`
-- **Redirect URLs**: add `https://your-domain.vercel.app/**`
-
-Without this, magic-link / OAuth redirects will fail in production.
+Auth is NextAuth (credentials + JWT sessions) — there is no external auth
+service to configure. Just make sure `AUTH_SECRET` is set in every
+environment (generate with `openssl rand -base64 32`). If you deploy
+somewhere other than Vercel, also set `AUTH_TRUST_HOST=true`.
 
 ---
 
@@ -75,13 +78,16 @@ Without this, magic-link / OAuth redirects will fail in production.
 Add every variable below in Vercel → Settings → Environment Variables (Production + Preview).
 
 ```
-# Supabase
-DATABASE_URL=postgresql://postgres:[password]@[host]:5432/postgres
-NEXT_PUBLIC_SUPABASE_URL=https://[project-ref].supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=[anon key from Supabase API settings]
-SUPABASE_SERVICE_ROLE_KEY=[service role key from Supabase API settings]
-SUPABASE_INVOICES_BUCKET=invoices
-SUPABASE_BRANDING_BUCKET=branding
+# Database (Railway)
+DATABASE_URL=postgresql://postgres:[password]@[host].proxy.rlwy.net:[port]/railway
+
+# Auth (NextAuth) — generate with: openssl rand -base64 32
+AUTH_SECRET=[random secret]
+
+# Cloudinary
+CLOUDINARY_CLOUD_NAME=[cloud name]
+CLOUDINARY_API_KEY=[api key]
+CLOUDINARY_API_SECRET=[api secret]
 
 # Email (Resend)
 RESEND_API_KEY=re_...
@@ -95,9 +101,9 @@ APP_TIMEZONE=Asia/Kolkata
 CRON_SECRET=[random 64-char hex string]
 ```
 
-**Where to find Supabase values**: Dashboard → Settings → API.
+**DATABASE_URL**: Railway → your Postgres service → Connect → public network URL.
 
-**DATABASE_URL**: use the "Session pooler" or "Direct connection" URL from Supabase → Settings → Database.
+**Cloudinary values**: Cloudinary console → Dashboard → API keys.
 
 ---
 
@@ -126,7 +132,6 @@ To change the time: edit the `schedule` field (standard cron syntax, UTC).
 Vercel → Settings → Domains → Add domain. Update DNS as instructed. After the domain is live, update:
 
 - `NEXT_PUBLIC_APP_URL` in Vercel env vars
-- Supabase Auth **Site URL** and **Redirect URLs**
 
 Redeploy after changing env vars.
 
