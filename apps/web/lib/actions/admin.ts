@@ -5,7 +5,6 @@ import { db } from '@eigensu/db'
 import { settings, bankAccounts, reminderRules, users, invoices } from '@eigensu/db/schema'
 import { eq, and, not } from 'drizzle-orm'
 import { writeAuditLog } from '@/lib/audit'
-import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { withAuth } from '@/lib/auth/with-auth'
 
 // ─── Settings ────────────────────────────────────────────────────────────────
@@ -187,25 +186,48 @@ const InviteUserSchema = z.object({
   role: z.enum(['admin', 'viewer', 'accountant']),
 })
 
+const INVITE_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000
+
 export async function inviteUser(input: unknown) {
   return withAuth('users:write', async (session) => {
     const data = InviteUserSchema.parse(input)
+    const email = data.email.toLowerCase()
 
-    const adminClient = await createSupabaseAdminClient()
-    const { error } = await adminClient.auth.admin.inviteUserByEmail(data.email, {
-      data: { name: data.name },
-    })
-    if (error && !error.message.includes('already')) {
-      return { success: false as const, error: error.message }
+    const inviteToken = crypto.randomUUID()
+    const inviteTokenExpiresAt = new Date(Date.now() + INVITE_TOKEN_TTL_MS)
+
+    const [inserted] = await db
+      .insert(users)
+      .values({
+        id: crypto.randomUUID(),
+        email,
+        name: data.name,
+        role: data.role,
+        passwordHash: null,
+        inviteToken,
+        inviteTokenExpiresAt,
+      })
+      .onConflictDoNothing()
+      .returning({ id: users.id })
+
+    if (!inserted) {
+      return { success: false as const, error: 'A user with this email already exists.' }
     }
 
-    await db
-      .insert(users)
-      .values({ id: crypto.randomUUID(), email: data.email, name: data.name, role: data.role })
-      .onConflictDoNothing()
+    const appUrl = process.env['NEXT_PUBLIC_APP_URL'] ?? 'http://localhost:3000'
+    const setPasswordUrl = `${appUrl}/set-password?token=${inviteToken}`
 
-    await writeAuditLog(session.authUid, 'INVITE_USER', 'user', undefined, {
-      email: data.email,
+    const { sendAlertEmail } = await import('@eigensu/email')
+    await sendAlertEmail({
+      to: [email],
+      subject: 'You have been invited to Eigensu Billing',
+      htmlBody: `<p style="font-family:Arial,sans-serif">Hi ${data.name},</p>
+<p style="font-family:Arial,sans-serif">You have been invited to Eigensu Billing. Set your password using the link below (valid for 7 days):</p>
+<p style="font-family:Arial,sans-serif"><a href="${setPasswordUrl}">${setPasswordUrl}</a></p>`,
+    })
+
+    await writeAuditLog(session.authUid, 'INVITE_USER', 'user', inserted.id, {
+      email,
       role: data.role,
     })
 
@@ -231,9 +253,13 @@ export async function revokeUser(userId: string) {
     if (userId === session.authUid)
       return { success: false as const, error: 'Cannot revoke your own access' }
 
-    const adminClient = await createSupabaseAdminClient()
-    await adminClient.auth.admin.deleteUser(userId)
-    await db.delete(users).where(eq(users.id, userId))
+    // Soft revoke: keeps audit_log.userId references valid forever
+    const [user] = await db
+      .update(users)
+      .set({ isActive: false, inviteToken: null, inviteTokenExpiresAt: null })
+      .where(eq(users.id, userId))
+      .returning()
+    if (!user) return { success: false as const, error: 'User not found' }
 
     await writeAuditLog(session.authUid, 'REVOKE_USER', 'user', userId)
     return { success: true as const }

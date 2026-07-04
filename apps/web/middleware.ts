@@ -9,7 +9,11 @@ export default auth((request) => {
   const isLoggedIn = !!request.auth
 
   // Allow public paths
-  if (pathname.startsWith('/api/auth') || pathname.startsWith('/api/cron')) {
+  if (
+    pathname.startsWith('/api/auth') ||
+    pathname.startsWith('/api/cron') ||
+    pathname.startsWith('/set-password')
+  ) {
     return NextResponse.next()
   }
 

@@ -56,16 +56,19 @@ export default async function UsersPage() {
           </TableHeader>
           <TableBody>
             {allUsers.map((u) => (
-              <TableRow key={u.id}>
+              <TableRow key={u.id} className={u.isActive ? undefined : 'opacity-60'}>
                 <TableCell className="font-medium text-slate-900">{u.name}</TableCell>
                 <TableCell className="text-slate-600">{u.email}</TableCell>
                 <TableCell>
-                  <Badge variant={ROLE_VARIANT[u.role] ?? 'secondary'} className="capitalize">
-                    {u.role}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={ROLE_VARIANT[u.role] ?? 'secondary'} className="capitalize">
+                      {u.role}
+                    </Badge>
+                    {!u.isActive && <Badge variant="destructive">Revoked</Badge>}
+                  </div>
                 </TableCell>
                 <TableCell>
-                  <UserRowActions user={u} currentUserId={session.authUid} />
+                  {u.isActive && <UserRowActions user={u} currentUserId={session.authUid} />}
                 </TableCell>
               </TableRow>
             ))}
