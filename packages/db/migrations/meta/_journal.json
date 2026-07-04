@@ -8,6 +8,13 @@
       "when": 1782063644873,
       "tag": "0000_strong_caretaker",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1783172941972,
+      "tag": "0001_chief_franklin_storm",
+      "breakpoints": true
     }
   ]
 }
