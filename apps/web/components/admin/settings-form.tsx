@@ -134,7 +134,6 @@ export function SettingsForm({ settings }: Props) {
           <Field label="Company Logo" hint="PNG/JPG/SVG, max 2 MB. Appears on invoices.">
             <div className="flex items-center gap-3">
               {logoUrl && (
-                // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={logoUrl}
                   alt="Company logo"

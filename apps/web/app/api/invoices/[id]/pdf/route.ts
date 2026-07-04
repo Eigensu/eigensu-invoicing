@@ -1,5 +1,4 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { db } from '@eigensu/db'
 import { invoices, settings } from '@eigensu/db/schema'
 import { eq } from 'drizzle-orm'
@@ -25,22 +24,7 @@ export async function GET(
     return NextResponse.json({ error: 'Invoice not found' }, { status: 404 })
   }
 
-  // Happy path: redirect to Supabase Storage signed URL
-  if (invoice.pdfPath) {
-    const supabase = await createSupabaseServerClient()
-    const bucket = process.env['SUPABASE_INVOICES_BUCKET'] ?? 'invoices'
-    const { data, error } = await supabase.storage
-      .from(bucket)
-      .createSignedUrl(invoice.pdfPath, 60)
-
-    if (error || !data) {
-      return NextResponse.json({ error: 'Failed to generate PDF URL' }, { status: 500 })
-    }
-
-    return NextResponse.redirect(data.signedUrl)
-  }
-
-  // Fallback: generate PDF on-demand when pdfPath is not yet set
+  // Generate the PDF on-demand
   const [settingsRow] = await db.select().from(settings).limit(1)
   if (!settingsRow) {
     return NextResponse.json({ error: 'Settings not configured' }, { status: 500 })
