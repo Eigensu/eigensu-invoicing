@@ -45,18 +45,44 @@ export async function updateSettings(input: unknown) {
   })
 }
 
-export async function uploadLogo(logoUrl: string) {
+const MAX_LOGO_BYTES = 2 * 1024 * 1024
+
+export async function uploadLogo(formData: FormData) {
   return withAuth('settings:write', async (session) => {
+    const file = formData.get('logo')
+    if (!(file instanceof File) || file.size === 0) {
+      return { success: false as const, error: 'No file provided' }
+    }
+    if (!file.type.startsWith('image/')) {
+      return { success: false as const, error: 'Logo must be an image' }
+    }
+    if (file.size > MAX_LOGO_BYTES) {
+      return { success: false as const, error: 'Logo must be smaller than 2 MB' }
+    }
+
     const [existing] = await db.select({ id: settings.id }).from(settings).limit(1)
     if (!existing) return { success: false as const, error: 'Settings row not found' }
 
+    const { cloudinary } = await import('@/lib/cloudinary')
+    const buffer = Buffer.from(await file.arrayBuffer())
+    const dataUri = `data:${file.type};base64,${buffer.toString('base64')}`
+
+    // Fixed public_id so old logos are overwritten instead of accumulating
+    const result = await cloudinary.uploader.upload(dataUri, {
+      folder: 'eigensu-billing/branding',
+      public_id: 'company-logo',
+      overwrite: true,
+      invalidate: true,
+      resource_type: 'image',
+    })
+
     await db
       .update(settings)
-      .set({ logoUrl, updatedAt: new Date() })
+      .set({ logoUrl: result.secure_url, updatedAt: new Date() })
       .where(eq(settings.id, existing.id))
 
     await writeAuditLog(session.authUid, 'UPLOAD_LOGO', 'settings', existing.id)
-    return { success: true as const }
+    return { success: true as const, logoUrl: result.secure_url }
   })
 }
 
