@@ -1,55 +1,37 @@
-import { NextResponse, type NextRequest } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
+import { NextResponse } from 'next/server'
+import NextAuth from 'next-auth'
+import { authConfig } from './auth.config'
 
-export async function middleware(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request })
+const { auth } = NextAuth(authConfig)
 
-  const supabaseUrl = process.env['NEXT_PUBLIC_SUPABASE_URL']
-  const supabaseAnonKey = process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY']
-
-  // Env not loaded yet (e.g. first cold-start tick in dev) — let the request through
-  if (!supabaseUrl || !supabaseAnonKey) return supabaseResponse
-
-  const supabase = createServerClient(
-    supabaseUrl,
-    supabaseAnonKey,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet: Array<{ name: string; value: string; options?: object }>) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({ request })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (supabaseResponse.cookies.set as (n: string, v: string, o?: any) => void)(name, value, options),
-          )
-        },
-      },
-    },
-  )
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
+export default auth((request) => {
   const { pathname } = request.nextUrl
+  const isLoggedIn = !!request.auth
 
   // Allow public paths
-  if (pathname.startsWith('/login') || pathname.startsWith('/api/cron')) {
-    return supabaseResponse
+  if (pathname.startsWith('/api/auth') || pathname.startsWith('/api/cron')) {
+    return NextResponse.next()
+  }
+
+  if (pathname.startsWith('/login')) {
+    // Authenticated users have no business on the login page
+    if (isLoggedIn) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/'
+      return NextResponse.redirect(url)
+    }
+    return NextResponse.next()
   }
 
   // Unauthenticated — redirect to login
-  if (!user) {
+  if (!isLoggedIn) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
   }
 
-  return supabaseResponse
-}
+  return NextResponse.next()
+})
 
 export const config = {
   matcher: [

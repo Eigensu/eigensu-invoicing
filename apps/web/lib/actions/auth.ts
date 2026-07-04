@@ -1,8 +1,8 @@
 'use server'
 
-import { redirect } from 'next/navigation'
 import { z } from 'zod'
-import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { AuthError } from 'next-auth'
+import { signIn as nextAuthSignIn, signOut as nextAuthSignOut } from '@/auth'
 import { writeAuditLog } from '@/lib/audit'
 import { getSession } from '@/lib/auth/session'
 
@@ -18,22 +18,26 @@ export async function signIn(formData: FormData): Promise<{ error?: string }> {
   })
   if (!parsed.success) return { error: 'Invalid email or password.' }
 
-  const supabase = await createSupabaseServerClient()
-  const { error } = await supabase.auth.signInWithPassword(parsed.data)
-
-  if (error) return { error: 'Invalid email or password.' }
-
-  redirect('/dashboard')
+  try {
+    await nextAuthSignIn('credentials', {
+      email: parsed.data.email,
+      password: parsed.data.password,
+      redirectTo: '/',
+    })
+  } catch (error) {
+    if (error instanceof AuthError) return { error: 'Invalid email or password.' }
+    // Success surfaces as a NEXT_REDIRECT error — let Next.js handle it
+    throw error
+  }
+  return {}
 }
 
 export async function signOut(): Promise<void> {
   const session = await getSession()
-  const supabase = await createSupabaseServerClient()
 
   if (session) {
     await writeAuditLog(session.user.id, 'user.logout')
   }
 
-  await supabase.auth.signOut()
-  redirect('/login')
+  await nextAuthSignOut({ redirectTo: '/login' })
 }
