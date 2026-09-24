@@ -1,11 +1,11 @@
 'use client'
 
-import { useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { Loader2 } from 'lucide-react'
+import { Eye, EyeOff, Loader2 } from 'lucide-react'
 import { signIn, signInWithGoogle } from '@/lib/actions/auth'
 import { Input } from '@/components/ui/input'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
@@ -42,6 +42,7 @@ function GoogleIcon() {
 export function LoginForm() {
   const [pending, startTransition] = useTransition()
   const [googlePending, startGoogleTransition] = useTransition()
+  const [showPassword, setShowPassword] = useState(false)
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -71,22 +72,6 @@ export function LoginForm() {
 
   return (
     <div className="space-y-5">
-      <button
-        type="button"
-        onClick={onGoogleClick}
-        disabled={googlePending || pending}
-        className="w-full h-11 rounded-lg border border-border bg-white text-sm font-semibold text-charcoal transition-colors hover:bg-cream disabled:opacity-60 flex items-center justify-center gap-2"
-      >
-        {googlePending ? <Loader2 className="h-4 w-4 animate-spin" /> : <GoogleIcon />}
-        Continue with Google
-      </button>
-
-      <div className="flex items-center gap-3">
-        <div className="h-px flex-1 bg-border" />
-        <span className="text-xs font-medium uppercase tracking-wide text-charcoal-600">or</span>
-        <div className="h-px flex-1 bg-border" />
-      </div>
-
       <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
         <FormField
@@ -94,15 +79,15 @@ export function LoginForm() {
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-xs font-semibold uppercase tracking-wide text-charcoal-600">
-                Email address
+              <FormLabel className="text-xs font-semibold text-charcoal-600">
+                Email
               </FormLabel>
               <FormControl>
                 <Input
                   type="email"
-                  placeholder="you@eigensu.com"
+                  placeholder="Enter your email"
                   autoComplete="email"
-                  className="h-[42px] border-border focus-visible:ring-navy/40 focus-visible:border-navy"
+                  className="h-12 rounded-xl border-transparent bg-cream-light focus-visible:ring-navy/40 focus-visible:border-navy focus-visible:bg-white"
                   {...field}
                 />
               </FormControl>
@@ -115,17 +100,28 @@ export function LoginForm() {
           name="password"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-xs font-semibold uppercase tracking-wide text-charcoal-600">
+              <FormLabel className="text-xs font-semibold text-charcoal-600">
                 Password
               </FormLabel>
               <FormControl>
-                <Input
-                  type="password"
-                  placeholder="••••••••"
-                  autoComplete="current-password"
-                  className="h-[42px] border-border focus-visible:ring-navy/40 focus-visible:border-navy"
-                  {...field}
-                />
+                <div className="relative">
+                  <Input
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Enter your password"
+                    autoComplete="current-password"
+                    className="h-12 rounded-xl border-transparent bg-cream-light pr-11 focus-visible:ring-navy/40 focus-visible:border-navy focus-visible:bg-white"
+                    {...field}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-charcoal-400 hover:text-charcoal-600"
+                    tabIndex={-1}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -134,13 +130,29 @@ export function LoginForm() {
         <button
           type="submit"
           disabled={pending}
-          className="mt-2 w-full h-11 rounded-lg bg-navy text-white text-sm font-semibold tracking-wide transition-colors hover:bg-navy-hover disabled:opacity-60 flex items-center justify-center gap-2"
+          className="mt-2 w-full h-12 rounded-xl bg-navy text-white text-sm font-semibold tracking-wide transition-colors hover:bg-navy-hover disabled:opacity-60 flex items-center justify-center gap-2"
         >
           {pending && <Loader2 className="h-4 w-4 animate-spin" />}
-          Sign in
+          Sign In
         </button>
       </form>
       </Form>
+
+      <div className="flex items-center gap-3">
+        <div className="h-px flex-1 bg-border" />
+        <span className="text-xs font-medium uppercase tracking-wide text-charcoal-600">or</span>
+        <div className="h-px flex-1 bg-border" />
+      </div>
+
+      <button
+        type="button"
+        onClick={onGoogleClick}
+        disabled={googlePending || pending}
+        className="w-full h-12 rounded-xl border border-border bg-white text-sm font-semibold text-charcoal transition-colors hover:bg-cream-light disabled:opacity-60 flex items-center justify-center gap-2"
+      >
+        {googlePending ? <Loader2 className="h-4 w-4 animate-spin" /> : <GoogleIcon />}
+        Continue with Google
+      </button>
     </div>
   )
 }
