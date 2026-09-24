@@ -32,6 +32,17 @@ export async function signIn(formData: FormData): Promise<{ error?: string }> {
   return {}
 }
 
+export async function signInWithGoogle(): Promise<{ error?: string }> {
+  try {
+    await nextAuthSignIn('google', { redirectTo: '/' })
+  } catch (error) {
+    if (error instanceof AuthError) return { error: 'Could not start Google sign-in.' }
+    // Success surfaces as a NEXT_REDIRECT error — let Next.js handle it
+    throw error
+  }
+  return {}
+}
+
 export async function signOut(): Promise<void> {
   const session = await getSession()
 
