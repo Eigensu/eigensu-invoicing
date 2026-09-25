@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest'
-import { toPaise, fromPaise, addAmounts, subtractAmounts, computeTax, formatINR } from '../money'
+import {
+  toPaise,
+  fromPaise,
+  addAmounts,
+  subtractAmounts,
+  computeTax,
+  formatINR,
+  computeInvoiceOutstanding,
+} from '../money'
 
 describe('toPaise / fromPaise', () => {
   it('converts whole rupees to paise', () => {
@@ -45,6 +53,32 @@ describe('computeTax', () => {
   it('floors fractional tax', () => {
     // 33.33% of 100 = 33.33 → floor to 33
     expect(computeTax(100, 33.33)).toBe(33)
+  })
+})
+
+describe('computeInvoiceOutstanding', () => {
+  it('returns the full total when nothing is paid', () => {
+    expect(computeInvoiceOutstanding(125000, [])).toBe(125000)
+  })
+
+  it('subtracts a single payment', () => {
+    expect(computeInvoiceOutstanding(125000, [{ amount: 50000 }])).toBe(75000)
+  })
+
+  it('subtracts multiple payments (the case send-reminders.ts got wrong)', () => {
+    // A hand-rolled reduce that seeded its accumulator with `total` instead
+    // of 0 gave -50000 for a single payment and something nonsensical for
+    // two — this is the regression guard for that bug.
+    expect(computeInvoiceOutstanding(125000, [{ amount: 50000 }, { amount: 25000 }])).toBe(50000)
+  })
+
+  it('returns zero when fully paid', () => {
+    expect(computeInvoiceOutstanding(125000, [{ amount: 125000 }])).toBe(0)
+  })
+
+  it('avoids float drift across many small payments', () => {
+    const payments = Array.from({ length: 3 }, () => ({ amount: 0.1 }))
+    expect(computeInvoiceOutstanding(1, payments)).toBe(0.7)
   })
 })
 

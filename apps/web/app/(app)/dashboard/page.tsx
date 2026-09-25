@@ -4,10 +4,10 @@ import { invoices, scheduleItems } from '@eigensu/db/schema'
 import { notInArray, eq } from 'drizzle-orm'
 import { requireSession } from '@/lib/auth/session'
 import { hasPermission } from '@/lib/auth/roles'
-import { formatINR } from '@eigensu/core'
+import { formatINR, addAmounts, computeInvoiceOutstanding } from '@eigensu/core'
 import { getTodayIST, dateToISO } from '@/lib/automation/today-ist'
 import { endOfMonth, subMonths, format, parseISO, differenceInCalendarDays } from 'date-fns'
-import { Badge } from '@/components/ui/badge'
+import { InvoiceStatusBadge } from '@/components/invoices/invoice-status-badge'
 import { MonthlyChart } from '@/components/dashboard/monthly-chart'
 import { ClientOutstandingChart } from '@/components/dashboard/client-outstanding-chart'
 import { SendReminderButton } from '@/components/dashboard/send-reminder-button'
@@ -16,18 +16,6 @@ import type { ClientOutstandingPoint } from '@/components/dashboard/client-outst
 import { TrendingUp, DollarSign, AlertCircle, Clock } from 'lucide-react'
 
 export const metadata = { title: 'Dashboard' }
-
-const STATUS_VARIANT: Record<
-  string,
-  'default' | 'success' | 'warning' | 'destructive' | 'secondary'
-> = {
-  draft: 'secondary',
-  sent: 'default',
-  partial: 'warning',
-  paid: 'success',
-  overdue: 'destructive',
-  cancelled: 'secondary',
-}
 
 export default async function DashboardPage() {
   const session = await requireSession()
@@ -60,13 +48,14 @@ export default async function DashboardPage() {
 
   for (const inv of allInvoices) {
     const total = Number(inv.total)
-    totalBilled += total
-    const paid = inv.payments.reduce((s, p) => s + Number(p.amount), 0)
-    totalReceived += paid
+    const payments = inv.payments.map((p) => ({ amount: Number(p.amount) }))
+    const paid = payments.reduce((sum, p) => addAmounts(sum, p.amount), 0)
+    totalBilled = addAmounts(totalBilled, total)
+    totalReceived = addAmounts(totalReceived, paid)
     if (inv.status !== 'paid') {
-      const rem = total - paid
-      outstanding += rem
-      if (inv.status === 'overdue') overdueOutstanding += rem
+      const rem = computeInvoiceOutstanding(total, payments)
+      outstanding = addAmounts(outstanding, rem)
+      if (inv.status === 'overdue') overdueOutstanding = addAmounts(overdueOutstanding, rem)
     }
   }
 
@@ -160,12 +149,14 @@ export default async function DashboardPage() {
   const clientMap = new Map<string, { name: string; outstanding: number }>()
   for (const inv of allInvoices) {
     if (inv.status === 'paid') continue
-    const paid = inv.payments.reduce((s, p) => s + Number(p.amount), 0)
-    const rem = Number(inv.total) - paid
+    const rem = computeInvoiceOutstanding(
+      Number(inv.total),
+      inv.payments.map((p) => ({ amount: Number(p.amount) })),
+    )
     if (rem <= 0) continue
     const existing = clientMap.get(inv.client.id)
     if (existing) {
-      existing.outstanding += rem
+      existing.outstanding = addAmounts(existing.outstanding, rem)
     } else {
       clientMap.set(inv.client.id, { name: inv.client.name, outstanding: rem })
     }
@@ -191,8 +182,10 @@ export default async function DashboardPage() {
   const overdueList = allInvoices
     .filter((inv) => inv.status === 'overdue')
     .map((inv) => {
-      const paid = inv.payments.reduce((s, p) => s + Number(p.amount), 0)
-      const invOutstanding = Number(inv.total) - paid
+      const invOutstanding = computeInvoiceOutstanding(
+        Number(inv.total),
+        inv.payments.map((p) => ({ amount: Number(p.amount) })),
+      )
       const daysOverdue = Math.max(
         0,
         differenceInCalendarDays(todayDate, parseISO(inv.dueDate)),
@@ -312,9 +305,7 @@ export default async function DashboardPage() {
                       {formatINR(Number(inv.total))}
                     </td>
                     <td className="px-5 py-3">
-                      <Badge variant={STATUS_VARIANT[inv.status] ?? 'secondary'}>
-                        {inv.status}
-                      </Badge>
+                      <InvoiceStatusBadge status={inv.status} />
                     </td>
                   </tr>
                 ))}

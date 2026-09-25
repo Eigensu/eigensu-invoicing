@@ -14,7 +14,7 @@ export default async function NewProjectPage({
   searchParams: Promise<{ clientId?: string }>
 }) {
   const session = await requireSession()
-  if (!hasPermission(session, 'projects:write')) redirect('/projects')
+  if (!hasPermission(session, 'projects:write')) redirect('/records/projects')
 
   const { clientId } = await searchParams
 

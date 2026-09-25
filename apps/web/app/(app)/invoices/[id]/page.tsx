@@ -11,7 +11,9 @@ import { InvoicePreview } from '@/components/invoice/InvoicePreview'
 import { InvoiceActions } from '@/components/invoices/invoice-actions'
 import { RecordPaymentDialog } from '@/components/invoices/record-payment-dialog'
 import { buildInvoiceRenderData } from '@/lib/invoice-render-data'
-import { formatINR } from '@eigensu/core'
+import { InvoiceStatusBadge } from '@/components/invoices/invoice-status-badge'
+import { formatDate } from '@/lib/format-date'
+import { formatINR, computeInvoiceOutstanding } from '@eigensu/core'
 import { ArrowLeft, Download } from 'lucide-react'
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
@@ -21,18 +23,6 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     columns: { invoiceNumber: true },
   })
   return { title: inv ? `Invoice ${inv.invoiceNumber}` : 'Invoice' }
-}
-
-const STATUS_VARIANT: Record<
-  string,
-  'default' | 'success' | 'warning' | 'destructive' | 'secondary'
-> = {
-  draft: 'secondary',
-  sent: 'default',
-  partial: 'warning',
-  paid: 'success',
-  overdue: 'destructive',
-  cancelled: 'secondary',
 }
 
 export default async function InvoiceDetailPage({
@@ -72,8 +62,10 @@ export default async function InvoiceDetailPage({
   if (!settingsRow) notFound()
 
   const renderData = buildInvoiceRenderData(invoice, settingsRow)
-  const totalPaid = invoice.payments.reduce((sum, p) => sum + Number(p.amount), 0)
-  const outstanding = Number(invoice.total) - totalPaid
+  const outstanding = computeInvoiceOutstanding(
+    Number(invoice.total),
+    invoice.payments.map((p) => ({ amount: Number(p.amount) })),
+  )
 
   const canSend = canWrite && invoice.status !== 'cancelled'
   const canCancel = canWrite && invoice.status === 'draft'
@@ -86,7 +78,7 @@ export default async function InvoiceDetailPage({
       <div className="flex items-start justify-between">
         <div className="space-y-1">
           <Link
-            href="/invoices"
+            href="/records/invoices"
             className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
@@ -96,9 +88,7 @@ export default async function InvoiceDetailPage({
             {invoice.invoiceNumber}
           </h1>
           <div className="flex items-center gap-2">
-            <Badge variant={STATUS_VARIANT[invoice.status] ?? 'secondary'}>
-              {invoice.status}
-            </Badge>
+            <InvoiceStatusBadge status={invoice.status} />
             {invoice.project && (
               <Badge variant="outline">
                 <Link href={`/projects/${invoice.project.id}`} className="hover:underline">
@@ -163,7 +153,7 @@ export default async function InvoiceDetailPage({
             <div>
               <dt className="font-medium text-slate-500">Sent At</dt>
               <dd className="mt-1 text-slate-900">
-                {new Date(invoice.sentAt).toLocaleDateString('en-IN')}
+                {formatDate(invoice.sentAt)}
               </dd>
             </div>
           )}

@@ -3,6 +3,7 @@ import { db } from '@eigensu/db'
 import { payments } from '@eigensu/db/schema'
 import { desc } from 'drizzle-orm'
 import { requireSession } from '@/lib/auth/session'
+import { EmptyState } from '@/components/empty-state'
 import {
   Table,
   TableBody,
@@ -37,9 +38,7 @@ export default async function RecordsPaymentsPage() {
       </p>
 
       {allPayments.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-slate-200 py-16 text-center">
-          <p className="text-sm text-slate-500">No payments recorded</p>
-        </div>
+        <EmptyState heading="No payments recorded" />
       ) : (
         <div className="rounded-lg border border-slate-200 bg-white">
           <Table>

@@ -6,6 +6,8 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
+import { ProjectStatusBadge } from '@/components/projects/project-status-badge'
+import { EmptyState } from '@/components/empty-state'
 import type { Project, Client, ScheduleItem } from '@eigensu/db'
 
 type ProjectRow = Project & {
@@ -20,23 +22,13 @@ const MODEL_LABEL: Record<string, string> = {
   upfront_amc: 'Upfront + AMC',
 }
 
-const STATUS_VARIANT: Record<string, 'default' | 'success' | 'secondary'> = {
-  active: 'default',
-  completed: 'success',
-  archived: 'secondary',
-}
-
 interface Props {
   projects: ProjectRow[]
 }
 
 export function ProjectTable({ projects }: Props) {
   if (projects.length === 0) {
-    return (
-      <div className="rounded-lg border border-dashed border-slate-200 py-16 text-center">
-        <p className="text-sm text-slate-500">No projects found.</p>
-      </div>
-    )
+    return <EmptyState heading="No projects found." />
   }
 
   return (
@@ -80,9 +72,7 @@ export function ProjectTable({ projects }: Props) {
                 </TableCell>
                 <TableCell className="text-right text-slate-600">{pending}</TableCell>
                 <TableCell>
-                  <Badge variant={STATUS_VARIANT[project.status] ?? 'secondary'}>
-                    {project.status}
-                  </Badge>
+                  <ProjectStatusBadge status={project.status} />
                 </TableCell>
               </TableRow>
             )

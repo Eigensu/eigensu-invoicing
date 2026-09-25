@@ -13,6 +13,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { EmptyState } from '@/components/empty-state'
+import { formatDate } from '@/lib/format-date'
 
 export const metadata = { title: 'Reminders' }
 
@@ -112,13 +113,7 @@ export default async function RemindersPage({
               {allReminders.map((r) => (
                 <TableRow key={r.id}>
                   <TableCell className="text-slate-600 whitespace-nowrap">
-                    {r.sentAt
-                      ? new Date(r.sentAt).toLocaleDateString('en-IN', {
-                          day: '2-digit',
-                          month: 'short',
-                          year: 'numeric',
-                        })
-                      : r.scheduledFor}
+                    {r.sentAt ? formatDate(r.sentAt) : r.scheduledFor}
                   </TableCell>
                   <TableCell className="text-slate-600">
                     {TYPE_LABEL[r.rule.type] ?? r.rule.type}

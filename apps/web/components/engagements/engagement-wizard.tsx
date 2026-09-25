@@ -18,6 +18,7 @@ import {
 import { cn } from '@/lib/utils'
 import { createEngagement } from '@/lib/actions/engagement'
 import { sendInvoice } from '@/lib/actions/invoices'
+import { formatDate } from '@/lib/format-date'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -124,7 +125,6 @@ function preview(s: WizardState): ScheduleItemDraft[] {
 }
 
 const STEPS = ['Client', 'Project', 'Payment', 'Schedule', 'Review']
-const niceDate = (dt: Date) => dt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
 const TYPE_LABEL: Record<string, string> = {
   one_time: 'One-time', installment: 'Installment', subscription: 'Subscription', amc: 'AMC',
 }
@@ -385,7 +385,7 @@ export function EngagementWizard({
                 <Label>Client <span className="text-rose">*</span></Label>
                 {clients.length === 0 ? (
                   <p className="text-sm text-charcoal-600 rounded-lg bg-amber-50 border border-amber-200 px-4 py-3">
-                    No active clients yet — add one in <a href="/clients" className="text-navy underline">Clients</a> first.
+                    No active clients yet — add one in <a href="/records/clients" className="text-navy underline">Clients</a> first.
                   </p>
                 ) : (
                   <Select value={s.existingClientId} onValueChange={(v) => d({ type: 'SET', key: 'existingClientId', value: v })}>
@@ -664,7 +664,7 @@ export function EngagementWizard({
                               {TYPE_LABEL[item.type] ?? item.type}
                             </span>
                           </td>
-                          <td className="px-3 py-2.5 text-charcoal-600">{niceDate(item.dueDate)}</td>
+                          <td className="px-3 py-2.5 text-charcoal-600">{formatDate(item.dueDate)}</td>
                           <td className="px-3 py-2.5 text-right font-medium text-charcoal">{formatINR(item.amount)}</td>
                         </tr>
                       ))}
@@ -731,7 +731,7 @@ export function EngagementWizard({
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-charcoal truncate">{item.label}</p>
-                          <p className="text-xs text-charcoal-600">{TYPE_LABEL[item.type] ?? item.type} · due {niceDate(item.dueDate)}</p>
+                          <p className="text-xs text-charcoal-600">{TYPE_LABEL[item.type] ?? item.type} · due {formatDate(item.dueDate)}</p>
                         </div>
                         <span className="text-sm font-semibold text-charcoal shrink-0">{formatINR(item.amount)}</span>
                       </div>
