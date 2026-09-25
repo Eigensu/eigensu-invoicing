@@ -11,6 +11,8 @@ export default auth((request) => {
   // Allow public paths
   if (
     pathname.startsWith('/api/auth') ||
+    pathname.startsWith('/forgot-password') ||
+    pathname.startsWith('/reset-password') ||
     pathname.startsWith('/api/cron') ||
     pathname.startsWith('/set-password')
   ) {

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import Link from 'next/link'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -127,6 +128,11 @@ export function LoginForm() {
             </FormItem>
           )}
         />
+        <div className="flex justify-end">
+          <Link href="/forgot-password" className="text-xs font-medium text-navy hover:text-navy-hover">
+            Forgot password?
+          </Link>
+        </div>
         <button
           type="submit"
           disabled={pending}
