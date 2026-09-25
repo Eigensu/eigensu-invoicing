@@ -1,5 +1,5 @@
 import React from 'react'
-import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
+import { Document, Page, Text, View, Image, StyleSheet } from '@react-pdf/renderer'
 import type { InvoiceRenderData } from './types'
 
 // Brand tokens — single source of truth mirrors packages/config/tailwind.preset.js
@@ -98,6 +98,12 @@ export function InvoiceDocument({ data }: Props) {
         <View style={s.row}>
           <Text style={s.title}>Invoice</Text>
           <View style={s.headerRight}>
+            {data.company.logoUrl && (
+              <Image
+                src={data.company.logoUrl}
+                style={{ height: 40, alignSelf: 'flex-end', marginBottom: 6, objectFit: 'contain' }}
+              />
+            )}
             <Text>{data.issueDate}</Text>
             <Text>Invoice No.</Text>
             <Text style={s.invoiceNo}>{data.invoiceNumber}</Text>

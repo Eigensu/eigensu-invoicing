@@ -1,5 +1,12 @@
 # Eigensu Billing — Backend Reference
 
+> **⚠️ MIGRATION NOTE (2026-07):** This document predates the migration off
+> Supabase. The stack is now **Railway Postgres + NextAuth v5 (credentials,
+> JWT sessions) + Cloudinary** (logo storage). References to Supabase
+> Auth/Storage below are historical — see `MIGRATION_NOTES.md` for what
+> changed.
+
+
 This document covers the complete backend: database schema, how Supabase is used, the auth system, every server action, both API routes, and the daily cron automation. Read this before touching any backend code.
 
 ---

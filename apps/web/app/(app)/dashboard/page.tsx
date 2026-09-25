@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { db } from '@eigensu/db'
-import { invoices } from '@eigensu/db/schema'
-import { notInArray } from 'drizzle-orm'
+import { invoices, scheduleItems } from '@eigensu/db/schema'
+import { notInArray, eq } from 'drizzle-orm'
 import { requireSession } from '@/lib/auth/session'
 import { hasPermission } from '@/lib/auth/roles'
 import { formatINR } from '@eigensu/core'
@@ -69,6 +69,56 @@ export default async function DashboardPage() {
       if (inv.status === 'overdue') overdueOutstanding += rem
     }
   }
+
+  // ── Pending / contracted billing — one-time vs recurring (AMC/subscription) ─
+  // A schedule item can be linked to a draft/partial invoice and still carry
+  // status 'pending' (status only flips on full payment — see recordPayment),
+  // so "not yet billed" must also check for the absence of an invoice link,
+  // same as ScheduleTable's canSelect check.
+  const pendingScheduleItemsRaw = await db.query.scheduleItems.findMany({
+    where: eq(scheduleItems.status, 'pending'),
+    with: {
+      project: {
+        columns: { id: true, name: true },
+        with: { client: { columns: { id: true, name: true } } },
+      },
+      invoiceLinks: { columns: { id: true } },
+    },
+    columns: { id: true, type: true, amount: true },
+  })
+  const pendingScheduleItems = pendingScheduleItemsRaw.filter(
+    (item) => item.invoiceLinks.length === 0,
+  )
+
+  const pendingByClient = new Map<
+    string,
+    { name: string; oneTime: number; recurring: number }
+  >()
+  let pendingOneTimeTotal = 0
+  let pendingRecurringTotal = 0
+
+  for (const item of pendingScheduleItems) {
+    const amount = Number(item.amount)
+    const isRecurring = item.type === 'amc' || item.type === 'subscription'
+    const clientId = item.project.client.id
+    const existing = pendingByClient.get(clientId) ?? {
+      name: item.project.client.name,
+      oneTime: 0,
+      recurring: 0,
+    }
+    if (isRecurring) {
+      existing.recurring += amount
+      pendingRecurringTotal += amount
+    } else {
+      existing.oneTime += amount
+      pendingOneTimeTotal += amount
+    }
+    pendingByClient.set(clientId, existing)
+  }
+
+  const pendingRows = [...pendingByClient.entries()]
+    .map(([clientId, v]) => ({ clientId, ...v }))
+    .sort((a, b) => b.oneTime + b.recurring - (a.oneTime + a.recurring))
 
   // ── Monthly chart — last 12 months ────────────────────────────────────────
   const todayIST = getTodayIST()
@@ -338,6 +388,77 @@ export default async function DashboardPage() {
             </table>
           )}
         </div>
+      </div>
+
+      {/* Pending / contracted billing — not yet invoiced */}
+      <div className="rounded-lg border border-slate-200 bg-white">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
+          <div>
+            <h2 className="text-sm font-semibold text-slate-900">
+              Pending Billing — Not Yet Invoiced
+            </h2>
+            <p className="mt-1 text-xs text-slate-500">
+              Contracted amounts from active projects that haven&apos;t been invoiced yet.
+            </p>
+          </div>
+          <div className="flex items-center gap-4 text-sm">
+            <div>
+              <span className="text-xs text-slate-500">One-Time </span>
+              <span className="font-semibold text-slate-900">
+                {formatINR(pendingOneTimeTotal)}
+              </span>
+            </div>
+            <div>
+              <span className="text-xs text-slate-500">Recurring (AMC) </span>
+              <span className="font-semibold text-slate-900">
+                {formatINR(pendingRecurringTotal)}
+              </span>
+            </div>
+          </div>
+        </div>
+        {pendingRows.length === 0 ? (
+          <div className="px-5 py-10 text-center">
+            <p className="text-sm text-slate-500">Nothing pending — everything is invoiced.</p>
+          </div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-100 text-left">
+                <th className="px-5 py-3 font-medium text-slate-500">Client</th>
+                <th className="px-5 py-3 text-right font-medium text-slate-500">
+                  One-Time Pending
+                </th>
+                <th className="px-5 py-3 text-right font-medium text-slate-500">
+                  Recurring (AMC) Pending
+                </th>
+                <th className="px-5 py-3 text-right font-medium text-slate-500">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {pendingRows.map((row) => (
+                <tr key={row.clientId} className="border-b border-slate-50 last:border-0">
+                  <td className="px-5 py-3">
+                    <Link
+                      href={`/clients/${row.clientId}`}
+                      className="text-slate-900 hover:underline"
+                    >
+                      {row.name}
+                    </Link>
+                  </td>
+                  <td className="px-5 py-3 text-right text-slate-700">
+                    {row.oneTime > 0 ? formatINR(row.oneTime) : '—'}
+                  </td>
+                  <td className="px-5 py-3 text-right text-slate-700">
+                    {row.recurring > 0 ? formatINR(row.recurring) : '—'}
+                  </td>
+                  <td className="px-5 py-3 text-right font-medium text-slate-900">
+                    {formatINR(row.oneTime + row.recurring)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   )

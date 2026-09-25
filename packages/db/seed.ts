@@ -1,36 +1,32 @@
 import { config } from 'dotenv'
 config({ path: '../../.env' })
-import { createClient } from '@supabase/supabase-js'
+import { hash } from 'bcryptjs'
+import { sql } from 'drizzle-orm'
 import { db } from './src/client'
 import {
   settings,
   reminderRules,
+  bankAccounts,
   users,
 } from './src/schema'
 
-const supabaseAdmin = createClient(
-  process.env['NEXT_PUBLIC_SUPABASE_URL'] ?? '',
-  process.env['SUPABASE_SERVICE_ROLE_KEY'] ?? '',
-  { auth: { autoRefreshToken: false, persistSession: false } },
-)
+const INVITE_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000
 
-async function inviteFounder(email: string, name: string) {
-  const { error } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-    data: { name },
-  })
-  if (error && !error.message.includes('already')) {
-    console.warn(`Warning inviting ${email}:`, error.message)
-  }
+async function countRows(table: typeof settings | typeof reminderRules | typeof bankAccounts | typeof users) {
+  const [row] = await db.select({ count: sql<number>`count(*)::int` }).from(table)
+  return row?.count ?? 0
 }
 
 async function main() {
   console.log('Seeding database...')
 
-  // Base settings — fill in company details via Admin → Settings after first login
-  await db
-    .insert(settings)
-    .values({
+  // Settings — single well-known row; insert only if the table is empty
+  if ((await countRows(settings)) === 0) {
+    await db.insert(settings).values({
       companyName: 'Eigensu',
+      address: 'Bengaluru, Karnataka',
+      phone: '+91 00000 00000',
+      email: 'contact@eigensu.in',
       defaultTaxPercent: '0',
       defaultCurrency: 'INR',
       invoiceNumberFormat: 'XXXX/YY',
@@ -40,13 +36,14 @@ async function main() {
       founderEmails: ['work.eigensu@gmail.com'],
       autoSendRecurring: false,
     })
-    .onConflictDoNothing()
-  console.log('✓ Settings')
+    console.log('✓ Settings (created)')
+  } else {
+    console.log('- Settings already present, skipped')
+  }
 
-  // Reminder rules
-  await db
-    .insert(reminderRules)
-    .values([
+  // Reminder rules — skip entirely if any rules already exist
+  if ((await countRows(reminderRules)) === 0) {
+    await db.insert(reminderRules).values([
       {
         type: 'client_due_soon',
         offsetDays: -7,
@@ -98,23 +95,73 @@ async function main() {
           'Hi,\n\nThere are {{overdueCount}} invoices overdue by 30 or more days.\nTotal outstanding: {{totalOutstanding}}.\n\n{{invoiceRows}}\n\nPlease follow up immediately.',
       },
     ])
-    .onConflictDoNothing()
-  console.log('✓ Reminder rules')
+    console.log('✓ Reminder rules (created)')
+  } else {
+    console.log('- Reminder rules already present, skipped')
+  }
 
-  // Admin user — add your own details here before running
+  // Bank account — insert the default account only if none exists.
+  // Placeholder values: edit via Admin → Bank Accounts after first login.
+  if ((await countRows(bankAccounts)) === 0) {
+    await db.insert(bankAccounts).values({
+      holderName: 'Eigensu',
+      accountNumber: '0000000000',
+      ifsc: 'XXXX0000000',
+      label: 'Primary Account',
+      isDefault: true,
+    })
+    console.log('✓ Bank account (created — fill in real details via Admin → Bank Accounts)')
+  } else {
+    console.log('- Bank account already present, skipped')
+  }
+
+  // Founders — skip any email that already exists. With SEED_FOUNDER_PASSWORD
+  // set, the password is seeded directly; otherwise a set-password URL is printed.
   const founderData = [
     { email: 'work.eigensu@gmail.com', name: 'Aanshuvi Shah' },
+    // Add the second founder's { email, name } here before running the seed.
   ]
-  for (const founder of founderData) {
-    await db
-      .insert(users)
-      .values({ id: crypto.randomUUID(), email: founder.email, name: founder.name, role: 'admin' })
-      .onConflictDoNothing()
-    await inviteFounder(founder.email, founder.name)
-  }
-  console.log('✓ Users + invites sent')
+  const seedPassword = process.env['SEED_FOUNDER_PASSWORD']
+  const appUrl = process.env['NEXT_PUBLIC_APP_URL'] ?? 'http://localhost:3000'
 
-  console.log('\nSeed complete.')
+  for (const founder of founderData) {
+    const email = founder.email.toLowerCase()
+    const inviteToken = crypto.randomUUID()
+
+    const [inserted] = await db
+      .insert(users)
+      .values({
+        id: crypto.randomUUID(),
+        email,
+        name: founder.name,
+        role: 'admin',
+        ...(seedPassword
+          ? { passwordHash: await hash(seedPassword, 12) }
+          : {
+              inviteToken,
+              inviteTokenExpiresAt: new Date(Date.now() + INVITE_TOKEN_TTL_MS),
+            }),
+      })
+      .onConflictDoNothing({ target: users.email })
+      .returning({ id: users.id })
+
+    if (!inserted) {
+      console.log(`- User ${email} already present, skipped`)
+    } else if (seedPassword) {
+      console.log(`✓ User ${email} (password from SEED_FOUNDER_PASSWORD)`)
+    } else {
+      console.log(`✓ User ${email} — set password at:`)
+      console.log(`  ${appUrl}/set-password?token=${inviteToken}`)
+    }
+  }
+
+  console.log('\nRow counts:')
+  console.log(`  settings:       ${await countRows(settings)}`)
+  console.log(`  reminder_rules: ${await countRows(reminderRules)}`)
+  console.log(`  bank_accounts:  ${await countRows(bankAccounts)}`)
+  console.log(`  users:          ${await countRows(users)}`)
+
+  console.log('\nSeed complete. Running it again is a no-op (idempotent).')
   console.log('Next: log in and go to Admin → Settings to fill in company info and bank account.')
   process.exit(0)
 }

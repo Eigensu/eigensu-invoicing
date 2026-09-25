@@ -1,5 +1,12 @@
 # Eigensu Billing — Implementation Specification
 
+> **⚠️ MIGRATION NOTE (2026-07):** This document predates the migration off
+> Supabase. The stack is now **Railway Postgres + NextAuth v5 (credentials,
+> JWT sessions) + Cloudinary** (logo storage). References to Supabase
+> Auth/Storage below are historical — see `MIGRATION_NOTES.md` for what
+> changed.
+
+
 **Version:** 2.0  
 **Date:** 2026-06-19  
 **Status:** Awaiting Approval  

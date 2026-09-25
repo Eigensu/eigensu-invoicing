@@ -35,7 +35,7 @@ export function UserRowActions({ user, currentUserId }: Props) {
   }
 
   async function handleRevoke() {
-    if (!confirm(`Revoke access for ${user.name} (${user.email})? This will delete their account.`))
+    if (!confirm(`Revoke access for ${user.name} (${user.email})? They will no longer be able to sign in.`))
       return
     setRevoking(true)
     try {

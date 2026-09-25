@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -8,15 +9,16 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { updateSettings } from '@/lib/actions/admin'
+import { updateSettings, uploadLogo } from '@/lib/actions/admin'
 import type { Settings } from '@eigensu/db'
+
+const MAX_LOGO_BYTES = 2 * 1024 * 1024
 
 const FormSchema = z.object({
   companyName: z.string().min(1, 'Required'),
   address: z.string(),
   phone: z.string(),
   email: z.string().email('Invalid email'),
-  logoUrl: z.string(),
   defaultTaxPercent: z.coerce.number().min(0).max(100),
   defaultCurrency: z.string().min(1),
   invoiceNumberFormat: z.string().min(1),
@@ -40,7 +42,6 @@ export function SettingsForm({ settings }: Props) {
       address: settings?.address ?? '',
       phone: settings?.phone ?? '',
       email: settings?.email ?? '',
-      logoUrl: settings?.logoUrl ?? '',
       defaultTaxPercent: Number(settings?.defaultTaxPercent ?? 0),
       defaultCurrency: settings?.defaultCurrency ?? 'INR',
       invoiceNumberFormat: settings?.invoiceNumberFormat ?? 'XXXX/YY',
@@ -54,6 +55,40 @@ export function SettingsForm({ settings }: Props) {
   const { register, handleSubmit, watch, setValue, formState: { isSubmitting, errors } } = form
   const autoSend = watch('autoSendRecurring')
 
+  const [logoUrl, setLogoUrl] = useState(settings?.logoUrl ?? '')
+  const [logoUploading, setLogoUploading] = useState(false)
+
+  async function onLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      toast.error('Logo must be an image')
+      e.target.value = ''
+      return
+    }
+    if (file.size > MAX_LOGO_BYTES) {
+      toast.error('Logo must be smaller than 2 MB')
+      e.target.value = ''
+      return
+    }
+
+    setLogoUploading(true)
+    try {
+      const fd = new FormData()
+      fd.set('logo', file)
+      const result = await uploadLogo(fd)
+      if (result.success) {
+        setLogoUrl(result.logoUrl)
+        toast.success('Logo uploaded')
+      } else {
+        toast.error(result.error)
+      }
+    } finally {
+      setLogoUploading(false)
+      e.target.value = ''
+    }
+  }
+
   async function onSubmit(values: FormValues) {
     const founderEmails = values.founderEmailsText
       .split(/[\n,]+/)
@@ -65,7 +100,6 @@ export function SettingsForm({ settings }: Props) {
       ...(values.address ? { address: values.address } : {}),
       ...(values.phone ? { phone: values.phone } : {}),
       email: values.email,
-      ...(values.logoUrl ? { logoUrl: values.logoUrl } : {}),
       defaultTaxPercent: values.defaultTaxPercent,
       defaultCurrency: values.defaultCurrency,
       invoiceNumberFormat: values.invoiceNumberFormat,
@@ -97,8 +131,24 @@ export function SettingsForm({ settings }: Props) {
           <Field label="Phone" error={errors.phone?.message}>
             <Input {...register('phone')} placeholder="+91 XXXXX XXXXX" />
           </Field>
-          <Field label="Logo URL" error={errors.logoUrl?.message}>
-            <Input {...register('logoUrl')} placeholder="https://..." />
+          <Field label="Company Logo" hint="PNG/JPG/SVG, max 2 MB. Appears on invoices.">
+            <div className="flex items-center gap-3">
+              {logoUrl && (
+                <img
+                  src={logoUrl}
+                  alt="Company logo"
+                  className="h-10 w-10 rounded border border-slate-200 object-contain"
+                />
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={onLogoChange}
+                disabled={logoUploading}
+                className="block w-full text-sm text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-slate-700 hover:file:bg-slate-200 disabled:opacity-60"
+              />
+            </div>
+            {logoUploading && <p className="text-xs text-slate-400">Uploading…</p>}
           </Field>
         </div>
         <Field label="Address" error={errors.address?.message}>

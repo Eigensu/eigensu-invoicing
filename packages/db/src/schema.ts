@@ -264,6 +264,11 @@ export const users = pgTable('users', {
   email: text('email').notNull().unique(),
   name: text('name').notNull(),
   role: userRoleEnum('role').notNull().default('viewer'),
+  // null = invited but password not yet set
+  passwordHash: text('password_hash'),
+  inviteToken: text('invite_token').unique(),
+  inviteTokenExpiresAt: timestamp('invite_token_expires_at', { withTimezone: true }),
+  isActive: boolean('is_active').notNull().default(true),
 })
 
 export const auditLog = pgTable('audit_log', {

@@ -34,7 +34,7 @@ Everything you need to use the app end-to-end: what each page does, how to onboa
 
 - Enter your email and password, then click **Sign in**.
 - You are redirected to `/dashboard` on success.
-- If you forget your password: go to the Supabase dashboard → Authentication → Users → find your user → **Send password recovery**. (Free tier limit: ~3 emails/hour. If you hit it, use the `set-password.ts` script approach described in setup.)
+- If you forget your password: ask an admin to send you a fresh invite (Admin → Users), which emails a new set-password link. Founders can also re-run the seed against a fresh account or set a password hash directly in the database.
 
 ---
 
@@ -395,11 +395,11 @@ Manage who can log in and what they can do.
 1. Click **Invite User**.
 2. Enter their name, email, and assign a role.
 3. They receive an invite email with a link to set their password.
-4. Once they log in for the first time, their Supabase auth UID is linked to their user record automatically.
+4. The link is valid for 7 days; once they set a password they can log in immediately.
 
 **Changing a role:** click the kebab menu (⋯) on any user row → **Change Role**. You cannot demote yourself.
 
-**Removing a user:** kebab menu → **Remove**. This removes them from the billing system but does not delete their Supabase auth account. You cannot remove yourself.
+**Removing a user:** kebab menu → **Revoke**. This deactivates their account — they can no longer sign in, but their audit history is preserved. You cannot revoke yourself.
 
 ---
 

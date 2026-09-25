@@ -5,7 +5,6 @@ import { db } from '@eigensu/db'
 import { settings, bankAccounts, reminderRules, users, invoices } from '@eigensu/db/schema'
 import { eq, and, not } from 'drizzle-orm'
 import { writeAuditLog } from '@/lib/audit'
-import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { withAuth } from '@/lib/auth/with-auth'
 
 // ─── Settings ────────────────────────────────────────────────────────────────
@@ -46,18 +45,44 @@ export async function updateSettings(input: unknown) {
   })
 }
 
-export async function uploadLogo(logoUrl: string) {
+const MAX_LOGO_BYTES = 2 * 1024 * 1024
+
+export async function uploadLogo(formData: FormData) {
   return withAuth('settings:write', async (session) => {
+    const file = formData.get('logo')
+    if (!(file instanceof File) || file.size === 0) {
+      return { success: false as const, error: 'No file provided' }
+    }
+    if (!file.type.startsWith('image/')) {
+      return { success: false as const, error: 'Logo must be an image' }
+    }
+    if (file.size > MAX_LOGO_BYTES) {
+      return { success: false as const, error: 'Logo must be smaller than 2 MB' }
+    }
+
     const [existing] = await db.select({ id: settings.id }).from(settings).limit(1)
     if (!existing) return { success: false as const, error: 'Settings row not found' }
 
+    const { cloudinary } = await import('@/lib/cloudinary')
+    const buffer = Buffer.from(await file.arrayBuffer())
+    const dataUri = `data:${file.type};base64,${buffer.toString('base64')}`
+
+    // Fixed public_id so old logos are overwritten instead of accumulating
+    const result = await cloudinary.uploader.upload(dataUri, {
+      folder: 'eigensu-billing/branding',
+      public_id: 'company-logo',
+      overwrite: true,
+      invalidate: true,
+      resource_type: 'image',
+    })
+
     await db
       .update(settings)
-      .set({ logoUrl, updatedAt: new Date() })
+      .set({ logoUrl: result.secure_url, updatedAt: new Date() })
       .where(eq(settings.id, existing.id))
 
     await writeAuditLog(session.authUid, 'UPLOAD_LOGO', 'settings', existing.id)
-    return { success: true as const }
+    return { success: true as const, logoUrl: result.secure_url }
   })
 }
 
@@ -187,25 +212,56 @@ const InviteUserSchema = z.object({
   role: z.enum(['admin', 'viewer', 'accountant']),
 })
 
+const INVITE_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000
+
 export async function inviteUser(input: unknown) {
   return withAuth('users:write', async (session) => {
     const data = InviteUserSchema.parse(input)
+    const email = data.email.toLowerCase()
 
-    const adminClient = await createSupabaseAdminClient()
-    const { error } = await adminClient.auth.admin.inviteUserByEmail(data.email, {
-      data: { name: data.name },
-    })
-    if (error && !error.message.includes('already')) {
-      return { success: false as const, error: error.message }
+    const inviteToken = crypto.randomUUID()
+    const inviteTokenExpiresAt = new Date(Date.now() + INVITE_TOKEN_TTL_MS)
+
+    const [inserted] = await db
+      .insert(users)
+      .values({
+        id: crypto.randomUUID(),
+        email,
+        name: data.name,
+        role: data.role,
+        passwordHash: null,
+        inviteToken,
+        inviteTokenExpiresAt,
+      })
+      .onConflictDoNothing()
+      .returning({ id: users.id })
+
+    if (!inserted) {
+      return { success: false as const, error: 'A user with this email already exists.' }
     }
 
-    await db
-      .insert(users)
-      .values({ id: crypto.randomUUID(), email: data.email, name: data.name, role: data.role })
-      .onConflictDoNothing()
+    const appUrl = process.env['NEXT_PUBLIC_APP_URL'] ?? 'http://localhost:3000'
+    const setPasswordUrl = `${appUrl}/set-password?token=${inviteToken}`
 
-    await writeAuditLog(session.authUid, 'INVITE_USER', 'user', undefined, {
-      email: data.email,
+    const { sendAlertEmail } = await import('@eigensu/email')
+    try {
+      await sendAlertEmail({
+        to: [email],
+        subject: 'You have been invited to Eigensu Billing',
+        htmlBody: `<p style="font-family:Arial,sans-serif">Hi ${data.name},</p>
+<p style="font-family:Arial,sans-serif">You have been invited to Eigensu Billing. Set your password using the link below (valid for 7 days):</p>
+<p style="font-family:Arial,sans-serif"><a href="${setPasswordUrl}">${setPasswordUrl}</a></p>`,
+      })
+    } catch {
+      // Roll back the insert so the invite can be retried — otherwise the
+      // unique email constraint leaves this person stuck forever with no
+      // way to resend.
+      await db.delete(users).where(eq(users.id, inserted.id))
+      return { success: false as const, error: 'Could not send the invite email. Please try again.' }
+    }
+
+    await writeAuditLog(session.authUid, 'INVITE_USER', 'user', inserted.id, {
+      email,
       role: data.role,
     })
 
@@ -231,9 +287,13 @@ export async function revokeUser(userId: string) {
     if (userId === session.authUid)
       return { success: false as const, error: 'Cannot revoke your own access' }
 
-    const adminClient = await createSupabaseAdminClient()
-    await adminClient.auth.admin.deleteUser(userId)
-    await db.delete(users).where(eq(users.id, userId))
+    // Soft revoke: keeps audit_log.userId references valid forever
+    const [user] = await db
+      .update(users)
+      .set({ isActive: false, inviteToken: null, inviteTokenExpiresAt: null })
+      .where(eq(users.id, userId))
+      .returning()
+    if (!user) return { success: false as const, error: 'User not found' }
 
     await writeAuditLog(session.authUid, 'REVOKE_USER', 'user', userId)
     return { success: true as const }
