@@ -6,7 +6,7 @@ import {
   settings,
 } from '@eigensu/db/schema'
 import { and, eq, inArray, or, gte, sql } from 'drizzle-orm'
-import { dueReminders, formatINR, subtractAmounts, addAmounts } from '@eigensu/core'
+import { dueReminders, formatINR, addAmounts, computeInvoiceOutstanding } from '@eigensu/core'
 import { writeAuditLog } from '@/lib/audit'
 import { dateToISO } from './today-ist'
 
@@ -52,9 +52,9 @@ export async function sendDueReminders(todayIST: Date): Promise<ReminderSummary>
     })
     const alreadySentRuleIds = new Set(handledReminders.map((r) => r.ruleId))
 
-    const outstanding = invoice.payments.reduce(
-      (sum, p) => subtractAmounts(Number(invoice.total), addAmounts(sum, Number(p.amount))),
+    const outstanding = computeInvoiceOutstanding(
       Number(invoice.total),
+      invoice.payments.map((p) => ({ amount: Number(p.amount) })),
     )
 
     const firings = dueReminders(
@@ -140,7 +140,14 @@ export async function sendDueReminders(todayIST: Date): Promise<ReminderSummary>
             overdueCount: String(overdueInvoices.length),
             totalOutstanding: formatINR(
               overdueInvoices.reduce(
-                (sum, inv) => addAmounts(sum, Number(inv.total)),
+                (sum, inv) =>
+                  addAmounts(
+                    sum,
+                    computeInvoiceOutstanding(
+                      Number(inv.total),
+                      inv.payments.map((p) => ({ amount: Number(p.amount) })),
+                    ),
+                  ),
                 0,
               ),
             ),

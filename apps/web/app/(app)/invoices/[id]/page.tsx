@@ -12,7 +12,8 @@ import { InvoiceActions } from '@/components/invoices/invoice-actions'
 import { RecordPaymentDialog } from '@/components/invoices/record-payment-dialog'
 import { buildInvoiceRenderData } from '@/lib/invoice-render-data'
 import { InvoiceStatusBadge } from '@/components/invoices/invoice-status-badge'
-import { formatINR } from '@eigensu/core'
+import { formatDate } from '@/lib/format-date'
+import { formatINR, computeInvoiceOutstanding } from '@eigensu/core'
 import { ArrowLeft, Download } from 'lucide-react'
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
@@ -61,8 +62,10 @@ export default async function InvoiceDetailPage({
   if (!settingsRow) notFound()
 
   const renderData = buildInvoiceRenderData(invoice, settingsRow)
-  const totalPaid = invoice.payments.reduce((sum, p) => sum + Number(p.amount), 0)
-  const outstanding = Number(invoice.total) - totalPaid
+  const outstanding = computeInvoiceOutstanding(
+    Number(invoice.total),
+    invoice.payments.map((p) => ({ amount: Number(p.amount) })),
+  )
 
   const canSend = canWrite && invoice.status !== 'cancelled'
   const canCancel = canWrite && invoice.status === 'draft'
@@ -150,7 +153,7 @@ export default async function InvoiceDetailPage({
             <div>
               <dt className="font-medium text-slate-500">Sent At</dt>
               <dd className="mt-1 text-slate-900">
-                {new Date(invoice.sentAt).toLocaleDateString('en-IN')}
+                {formatDate(invoice.sentAt)}
               </dd>
             </div>
           )}

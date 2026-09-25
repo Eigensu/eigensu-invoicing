@@ -7,6 +7,7 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { ProjectStatusBadge } from '@/components/projects/project-status-badge'
+import { EmptyState } from '@/components/empty-state'
 import type { Project, Client, ScheduleItem } from '@eigensu/db'
 
 type ProjectRow = Project & {
@@ -27,11 +28,7 @@ interface Props {
 
 export function ProjectTable({ projects }: Props) {
   if (projects.length === 0) {
-    return (
-      <div className="rounded-lg border border-dashed border-slate-200 py-16 text-center">
-        <p className="text-sm text-slate-500">No projects found.</p>
-      </div>
-    )
+    return <EmptyState heading="No projects found." />
   }
 
   return (

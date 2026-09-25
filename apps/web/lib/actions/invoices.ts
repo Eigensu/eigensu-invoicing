@@ -13,7 +13,7 @@ import {
 import { eq, and, inArray } from 'drizzle-orm'
 import { writeAuditLog } from '@/lib/audit'
 import { allocateInvoiceNumber } from '@/lib/invoice-number'
-import { amountToWords, formatINR, addAmounts, subtractAmounts } from '@eigensu/core'
+import { amountToWords, formatINR, addAmounts, computeInvoiceOutstanding } from '@eigensu/core'
 import { withAuth } from '@/lib/auth/with-auth'
 
 const LineItemSchema = z.object({
@@ -203,6 +203,8 @@ export async function getInvoiceOutstanding(invoiceId: string): Promise<number> 
     with: { payments: true },
   })
   if (!invoice) return 0
-  const totalPaid = invoice.payments.reduce((sum, p) => addAmounts(sum, Number(p.amount)), 0)
-  return subtractAmounts(Number(invoice.total), totalPaid)
+  return computeInvoiceOutstanding(
+    Number(invoice.total),
+    invoice.payments.map((p) => ({ amount: Number(p.amount) })),
+  )
 }

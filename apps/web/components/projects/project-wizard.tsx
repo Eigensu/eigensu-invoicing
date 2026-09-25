@@ -19,6 +19,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { createProject } from '@/lib/actions/projects'
+import { formatDate } from '@/lib/format-date'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -613,7 +614,7 @@ export function ProjectWizard({ clients, defaultClientId }: Props) {
                             <Badge variant="secondary">{item.type}</Badge>
                           </TableCell>
                           <TableCell className="text-slate-600">
-                            {item.dueDate.toLocaleDateString('en-IN')}
+                            {formatDate(item.dueDate)}
                           </TableCell>
                           <TableCell className="text-right font-medium">{item.amount.toLocaleString('en-IN')}</TableCell>
                         </TableRow>

@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { EditClientButton } from '@/components/clients/edit-client-button'
 import { InvoiceStatusBadge } from '@/components/invoices/invoice-status-badge'
+import { EmptyState } from '@/components/empty-state'
 import { formatINR } from '@eigensu/core'
 import { ArrowLeft, FolderKanban, FileText } from 'lucide-react'
 
@@ -125,13 +126,15 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
         <TabsContent value="projects">
           <div className="mt-4 space-y-3">
             {client.projects.length === 0 ? (
-              <div className="rounded-lg border border-dashed border-slate-200 py-12 text-center">
-                <FolderKanban className="mx-auto h-8 w-8 text-slate-300 mb-2" />
-                <p className="text-sm text-slate-500">No projects yet.</p>
-                <Button asChild variant="outline" size="sm" className="mt-3">
-                  <Link href={`/projects/new?clientId=${client.id}`}>Create Project</Link>
-                </Button>
-              </div>
+              <EmptyState
+                heading="No projects yet."
+                icon={FolderKanban}
+                cta={
+                  <Button asChild variant="outline" size="sm">
+                    <Link href={`/projects/new?clientId=${client.id}`}>Create Project</Link>
+                  </Button>
+                }
+              />
             ) : (
               client.projects.map((project) => {
                 const pending = project.scheduleItems.filter((s) => s.status === 'pending').length
@@ -163,10 +166,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
         <TabsContent value="invoices">
           <div className="mt-4 space-y-3">
             {client.invoices.length === 0 ? (
-              <div className="rounded-lg border border-dashed border-slate-200 py-12 text-center">
-                <FileText className="mx-auto h-8 w-8 text-slate-300 mb-2" />
-                <p className="text-sm text-slate-500">No invoices yet.</p>
-              </div>
+              <EmptyState heading="No invoices yet." icon={FileText} />
             ) : (
               <div className="rounded-lg border border-slate-200 bg-white divide-y divide-slate-100">
                 {client.invoices.map((inv) => (

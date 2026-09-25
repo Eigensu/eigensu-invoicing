@@ -16,6 +16,7 @@ import {
 import { Plus } from 'lucide-react'
 import { formatINR } from '@eigensu/core'
 import { InvoiceStatusBadge } from '@/components/invoices/invoice-status-badge'
+import { EmptyState } from '@/components/empty-state'
 
 export const metadata = { title: 'Records — Invoices' }
 
@@ -83,14 +84,18 @@ export default async function RecordsInvoicesPage({
       </div>
 
       {invoiceList.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-slate-200 py-16 text-center">
-          <p className="text-sm text-slate-500">No invoices yet</p>
-          {canWrite && (
-            <Button asChild size="sm" className="mt-4">
-              <Link href="/invoices/new">Create invoice</Link>
-            </Button>
-          )}
-        </div>
+        <EmptyState
+          heading="No invoices yet"
+          {...(canWrite
+            ? {
+                cta: (
+                  <Button asChild size="sm">
+                    <Link href="/invoices/new">Create invoice</Link>
+                  </Button>
+                ),
+              }
+            : {})}
+        />
       ) : (
         <div className="rounded-lg border border-slate-200 bg-white">
           <Table>

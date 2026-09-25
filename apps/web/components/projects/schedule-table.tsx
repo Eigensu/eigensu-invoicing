@@ -9,6 +9,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { EmptyState } from '@/components/empty-state'
 import { FileText } from 'lucide-react'
 import type { ScheduleItem } from '@eigensu/db'
 
@@ -67,11 +68,7 @@ export function ScheduleTable({ projectId, clientId, items }: Props) {
   }
 
   if (items.length === 0) {
-    return (
-      <div className="rounded-lg border border-dashed border-slate-200 py-12 text-center">
-        <p className="text-sm text-slate-500">No schedule items.</p>
-      </div>
-    )
+    return <EmptyState heading="No schedule items." />
   }
 
   return (

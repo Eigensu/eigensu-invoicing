@@ -1,6 +1,7 @@
 import { db } from '@eigensu/db'
 import { bankAccounts } from '@eigensu/db/schema'
 import { Badge } from '@/components/ui/badge'
+import { EmptyState } from '@/components/empty-state'
 import { BankAccountDialog } from '@/components/admin/bank-account-dialog'
 import { BankAccountActions } from '@/components/admin/bank-account-actions'
 import { Plus } from 'lucide-react'
@@ -37,9 +38,7 @@ export default async function BankAccountsPage() {
       </div>
 
       {accounts.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-slate-200 py-12 text-center">
-          <p className="text-sm text-slate-500">No bank accounts yet.</p>
-        </div>
+        <EmptyState heading="No bank accounts yet." />
       ) : (
         <div className="rounded-lg border border-slate-200 bg-white">
           <Table>

@@ -19,6 +19,14 @@ export function computeTax(subtotal: number, taxPercent: number): number {
   return Math.floor(fromPaise(toPaise(subtotal) * taxPercent) / 100)
 }
 
+// Single source of truth for "how much of this invoice is still owed" —
+// sums payments in paise before subtracting, so it can't drift from
+// floating-point addition the way `total - payments.reduce(...)` can.
+export function computeInvoiceOutstanding(total: number, payments: Array<{ amount: number }>): number {
+  const totalPaid = payments.reduce((sum, p) => addAmounts(sum, p.amount), 0)
+  return subtractAmounts(total, totalPaid)
+}
+
 export function formatINR(amount: number): string {
   if (amount === 0) return '₹0'
 
