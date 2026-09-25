@@ -244,13 +244,21 @@ export async function inviteUser(input: unknown) {
     const setPasswordUrl = `${appUrl}/set-password?token=${inviteToken}`
 
     const { sendAlertEmail } = await import('@eigensu/email')
-    await sendAlertEmail({
-      to: [email],
-      subject: 'You have been invited to Eigensu Billing',
-      htmlBody: `<p style="font-family:Arial,sans-serif">Hi ${data.name},</p>
+    try {
+      await sendAlertEmail({
+        to: [email],
+        subject: 'You have been invited to Eigensu Billing',
+        htmlBody: `<p style="font-family:Arial,sans-serif">Hi ${data.name},</p>
 <p style="font-family:Arial,sans-serif">You have been invited to Eigensu Billing. Set your password using the link below (valid for 7 days):</p>
 <p style="font-family:Arial,sans-serif"><a href="${setPasswordUrl}">${setPasswordUrl}</a></p>`,
-    })
+      })
+    } catch {
+      // Roll back the insert so the invite can be retried — otherwise the
+      // unique email constraint leaves this person stuck forever with no
+      // way to resend.
+      await db.delete(users).where(eq(users.id, inserted.id))
+      return { success: false as const, error: 'Could not send the invite email. Please try again.' }
+    }
 
     await writeAuditLog(session.authUid, 'INVITE_USER', 'user', inserted.id, {
       email,
