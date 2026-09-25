@@ -6,6 +6,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
+import { ProjectStatusBadge } from '@/components/projects/project-status-badge'
 import type { Project, Client, ScheduleItem } from '@eigensu/db'
 
 type ProjectRow = Project & {
@@ -18,12 +19,6 @@ const MODEL_LABEL: Record<string, string> = {
   installments: 'Installments',
   subscription: 'Subscription',
   upfront_amc: 'Upfront + AMC',
-}
-
-const STATUS_VARIANT: Record<string, 'default' | 'success' | 'secondary'> = {
-  active: 'default',
-  completed: 'success',
-  archived: 'secondary',
 }
 
 interface Props {
@@ -80,9 +75,7 @@ export function ProjectTable({ projects }: Props) {
                 </TableCell>
                 <TableCell className="text-right text-slate-600">{pending}</TableCell>
                 <TableCell>
-                  <Badge variant={STATUS_VARIANT[project.status] ?? 'secondary'}>
-                    {project.status}
-                  </Badge>
+                  <ProjectStatusBadge status={project.status} />
                 </TableCell>
               </TableRow>
             )

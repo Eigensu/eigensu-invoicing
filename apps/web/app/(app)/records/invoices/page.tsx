@@ -4,7 +4,6 @@ import { invoices } from '@eigensu/db/schema'
 import { eq, desc } from 'drizzle-orm'
 import { requireSession } from '@/lib/auth/session'
 import { hasPermission } from '@/lib/auth/roles'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   Table,
@@ -16,20 +15,9 @@ import {
 } from '@/components/ui/table'
 import { Plus } from 'lucide-react'
 import { formatINR } from '@eigensu/core'
+import { InvoiceStatusBadge } from '@/components/invoices/invoice-status-badge'
 
 export const metadata = { title: 'Records — Invoices' }
-
-const STATUS_VARIANT: Record<
-  string,
-  'default' | 'success' | 'warning' | 'destructive' | 'secondary'
-> = {
-  draft: 'secondary',
-  sent: 'default',
-  partial: 'warning',
-  paid: 'success',
-  overdue: 'destructive',
-  cancelled: 'secondary',
-}
 
 const STATUS_OPTIONS = ['all', 'draft', 'sent', 'partial', 'paid', 'overdue', 'cancelled']
 
@@ -141,9 +129,7 @@ export default async function RecordsInvoicesPage({
                     {formatINR(Number(inv.total))}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={STATUS_VARIANT[inv.status] ?? 'secondary'}>
-                      {inv.status}
-                    </Badge>
+                    <InvoiceStatusBadge status={inv.status} />
                   </TableCell>
                 </TableRow>
               ))}

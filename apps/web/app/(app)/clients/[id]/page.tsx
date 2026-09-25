@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { EditClientButton } from '@/components/clients/edit-client-button'
+import { InvoiceStatusBadge } from '@/components/invoices/invoice-status-badge'
 import { formatINR } from '@eigensu/core'
 import { ArrowLeft, FolderKanban, FileText } from 'lucide-react'
 
@@ -60,7 +61,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
       <div className="flex items-start justify-between">
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-sm text-slate-500">
-            <Link href="/clients" className="hover:text-slate-900 flex items-center gap-1">
+            <Link href="/records/clients" className="hover:text-slate-900 flex items-center gap-1">
               <ArrowLeft className="h-3.5 w-3.5" />Clients
             </Link>
           </div>
@@ -193,16 +194,4 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
       </Tabs>
     </div>
   )
-}
-
-function InvoiceStatusBadge({ status }: { status: string }) {
-  const map: Record<string, 'default' | 'secondary' | 'success' | 'warning' | 'destructive'> = {
-    draft: 'secondary',
-    sent: 'default',
-    partial: 'warning',
-    paid: 'success',
-    overdue: 'destructive',
-    cancelled: 'secondary',
-  }
-  return <Badge variant={map[status] ?? 'secondary'}>{status}</Badge>
 }

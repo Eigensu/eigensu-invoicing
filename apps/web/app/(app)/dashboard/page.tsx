@@ -7,7 +7,7 @@ import { hasPermission } from '@/lib/auth/roles'
 import { formatINR } from '@eigensu/core'
 import { getTodayIST, dateToISO } from '@/lib/automation/today-ist'
 import { endOfMonth, subMonths, format, parseISO, differenceInCalendarDays } from 'date-fns'
-import { Badge } from '@/components/ui/badge'
+import { InvoiceStatusBadge } from '@/components/invoices/invoice-status-badge'
 import { MonthlyChart } from '@/components/dashboard/monthly-chart'
 import { ClientOutstandingChart } from '@/components/dashboard/client-outstanding-chart'
 import { SendReminderButton } from '@/components/dashboard/send-reminder-button'
@@ -16,18 +16,6 @@ import type { ClientOutstandingPoint } from '@/components/dashboard/client-outst
 import { TrendingUp, DollarSign, AlertCircle, Clock } from 'lucide-react'
 
 export const metadata = { title: 'Dashboard' }
-
-const STATUS_VARIANT: Record<
-  string,
-  'default' | 'success' | 'warning' | 'destructive' | 'secondary'
-> = {
-  draft: 'secondary',
-  sent: 'default',
-  partial: 'warning',
-  paid: 'success',
-  overdue: 'destructive',
-  cancelled: 'secondary',
-}
 
 export default async function DashboardPage() {
   const session = await requireSession()
@@ -312,9 +300,7 @@ export default async function DashboardPage() {
                       {formatINR(Number(inv.total))}
                     </td>
                     <td className="px-5 py-3">
-                      <Badge variant={STATUS_VARIANT[inv.status] ?? 'secondary'}>
-                        {inv.status}
-                      </Badge>
+                      <InvoiceStatusBadge status={inv.status} />
                     </td>
                   </tr>
                 ))}

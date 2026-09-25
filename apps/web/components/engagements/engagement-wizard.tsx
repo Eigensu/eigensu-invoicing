@@ -385,7 +385,7 @@ export function EngagementWizard({
                 <Label>Client <span className="text-rose">*</span></Label>
                 {clients.length === 0 ? (
                   <p className="text-sm text-charcoal-600 rounded-lg bg-amber-50 border border-amber-200 px-4 py-3">
-                    No active clients yet — add one in <a href="/clients" className="text-navy underline">Clients</a> first.
+                    No active clients yet — add one in <a href="/records/clients" className="text-navy underline">Clients</a> first.
                   </p>
                 ) : (
                   <Select value={s.existingClientId} onValueChange={(v) => d({ type: 'SET', key: 'existingClientId', value: v })}>

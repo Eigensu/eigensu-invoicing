@@ -10,7 +10,7 @@ export const metadata = { title: 'New Engagement' }
 
 export default async function NewEngagementPage() {
   const session = await requireSession()
-  if (!hasPermission(session, 'projects:write')) redirect('/projects')
+  if (!hasPermission(session, 'projects:write')) redirect('/records/projects')
 
   const [activeClients, allBankAccounts, settingsRow] = await Promise.all([
     db.query.clients.findMany({

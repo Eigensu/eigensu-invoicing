@@ -18,7 +18,7 @@ export default async function NewInvoicePage({
   }>
 }) {
   const session = await requireSession()
-  if (!hasPermission(session, 'invoices:write')) redirect('/invoices')
+  if (!hasPermission(session, 'invoices:write')) redirect('/records/invoices')
 
   const {
     scheduleItems: scheduleItemParam,
@@ -54,7 +54,7 @@ export default async function NewInvoicePage({
       .then((r) => r[0] ?? null),
   ])
 
-  if (allBankAccounts.length === 0) redirect('/invoices')
+  if (allBankAccounts.length === 0) redirect('/records/invoices')
 
   const defaultBankAccount = allBankAccounts.find((b) => b.isDefault) ?? allBankAccounts[0]
 

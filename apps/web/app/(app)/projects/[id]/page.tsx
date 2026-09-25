@@ -6,6 +6,7 @@ import { eq, asc } from 'drizzle-orm'
 import { requireSession } from '@/lib/auth/session'
 import { hasPermission } from '@/lib/auth/roles'
 import { Badge } from '@/components/ui/badge'
+import { ProjectStatusBadge } from '@/components/projects/project-status-badge'
 import { ScheduleTable } from '@/components/projects/schedule-table'
 import { EditProjectButton } from '@/components/projects/edit-project-button'
 import { formatINR } from '@eigensu/core'
@@ -51,11 +52,6 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
     upfront_amc: 'Upfront + AMC',
   }
 
-  const STATUS_VARIANT: Record<string, 'default' | 'success' | 'secondary'> = {
-    active: 'default',
-    completed: 'success',
-    archived: 'secondary',
-  }
 
   const pendingCount = project.scheduleItems.filter((s) => s.status === 'pending').length
   const paidCount = project.scheduleItems.filter((s) => s.status === 'paid').length
@@ -66,7 +62,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       <div className="flex items-start justify-between">
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-sm text-slate-500">
-            <Link href="/projects" className="hover:text-slate-900 flex items-center gap-1">
+            <Link href="/records/projects" className="hover:text-slate-900 flex items-center gap-1">
               <ArrowLeft className="h-3.5 w-3.5" />Projects
             </Link>
             <span>/</span>
@@ -76,7 +72,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           </div>
           <h1 className="text-2xl font-semibold text-slate-900">{project.name}</h1>
           <div className="flex items-center gap-2">
-            <Badge variant={STATUS_VARIANT[project.status] ?? 'secondary'}>{project.status}</Badge>
+            <ProjectStatusBadge status={project.status} />
             <Badge variant="secondary">{MODEL_LABEL[project.paymentModel] ?? project.paymentModel}</Badge>
           </div>
         </div>
