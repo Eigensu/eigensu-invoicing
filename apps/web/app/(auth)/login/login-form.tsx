@@ -72,9 +72,9 @@ export function LoginForm() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField
           control={form.control}
           name="email"
@@ -88,7 +88,7 @@ export function LoginForm() {
                   type="email"
                   placeholder="Enter your email"
                   autoComplete="email"
-                  className="h-12 rounded-xl border-transparent bg-cream-light focus-visible:ring-navy/40 focus-visible:border-navy focus-visible:bg-white"
+                  className="h-11 rounded-xl border-transparent bg-cream-light focus-visible:ring-navy/40 focus-visible:border-navy focus-visible:bg-white"
                   {...field}
                 />
               </FormControl>
@@ -110,7 +110,7 @@ export function LoginForm() {
                     type={showPassword ? 'text' : 'password'}
                     placeholder="Enter your password"
                     autoComplete="current-password"
-                    className="h-12 rounded-xl border-transparent bg-cream-light pr-11 focus-visible:ring-navy/40 focus-visible:border-navy focus-visible:bg-white"
+                    className="h-11 rounded-xl border-transparent bg-cream-light pr-11 focus-visible:ring-navy/40 focus-visible:border-navy focus-visible:bg-white"
                     {...field}
                   />
                   <button
@@ -136,7 +136,7 @@ export function LoginForm() {
         <button
           type="submit"
           disabled={pending}
-          className="mt-2 w-full h-12 rounded-xl bg-navy text-white text-sm font-semibold tracking-wide transition-colors hover:bg-navy-hover disabled:opacity-60 flex items-center justify-center gap-2"
+          className="w-full h-11 rounded-xl bg-navy text-white text-sm font-semibold tracking-wide transition-colors hover:bg-navy-hover disabled:opacity-60 flex items-center justify-center gap-2"
         >
           {pending && <Loader2 className="h-4 w-4 animate-spin" />}
           Sign In
@@ -154,7 +154,7 @@ export function LoginForm() {
         type="button"
         onClick={onGoogleClick}
         disabled={googlePending || pending}
-        className="w-full h-12 rounded-xl border border-border bg-white text-sm font-semibold text-charcoal transition-colors hover:bg-cream-light disabled:opacity-60 flex items-center justify-center gap-2"
+        className="w-full h-11 rounded-xl border border-border bg-white text-sm font-semibold text-charcoal transition-colors hover:bg-cream-light disabled:opacity-60 flex items-center justify-center gap-2"
       >
         {googlePending ? <Loader2 className="h-4 w-4 animate-spin" /> : <GoogleIcon />}
         Continue with Google

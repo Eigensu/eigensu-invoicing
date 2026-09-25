@@ -9,11 +9,11 @@ export default async function LoginPage() {
   if (session) redirect('/dashboard')
 
   return (
-    <div className="min-h-screen bg-cream flex items-center justify-center p-4 md:p-8">
-      <div className="w-full max-w-[960px] rounded-[28px] bg-white shadow-[0_8px_40px_rgba(48,52,63,0.14)] overflow-hidden flex flex-col md:flex-row md:min-h-[600px]">
+    <div className="h-screen bg-cream flex items-center justify-center p-4 overflow-hidden">
+      <div className="w-full max-w-[900px] rounded-[24px] bg-white shadow-[0_8px_40px_rgba(48,52,63,0.14)] overflow-hidden flex flex-col md:flex-row max-h-full">
 
         {/* Left panel — brand */}
-        <div className="relative hidden md:flex md:w-[44%] flex-col justify-between bg-navy p-10 overflow-hidden">
+        <div className="relative hidden md:flex md:w-[42%] flex-col justify-between bg-navy p-7 overflow-hidden">
           {/* Decorative pattern */}
           <div
             aria-hidden
@@ -35,25 +35,25 @@ export default async function LoginPage() {
 
           {/* Logotype */}
           <div className="relative flex flex-col">
-            <span className="font-sans text-2xl font-bold tracking-[0.14em] text-white uppercase">
+            <span className="font-sans text-xl font-bold tracking-[0.14em] text-white uppercase">
               EIGENSU
             </span>
-            <span className="font-sans text-[11px] font-medium tracking-[0.25em] text-sky-hover uppercase -mt-1">
+            <span className="font-sans text-[10px] font-medium tracking-[0.25em] text-sky-hover uppercase -mt-1">
               BILLING
             </span>
           </div>
 
           {/* Headline */}
           <div className="relative">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-sky mb-3">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-sky mb-2">
               [ Consulting Billing ]
             </p>
-            <h2 className="font-display text-[34px] leading-[1.15] font-bold text-white">
+            <h2 className="font-display text-[26px] leading-[1.15] font-bold text-white">
               Invoice smarter.
               <br />
               Get paid <span className="text-sky">faster.</span>
             </h2>
-            <p className="mt-4 text-sm text-white/60">
+            <p className="mt-2 text-sm text-white/60">
               Client billing and receivables, in one place.
             </p>
           </div>
@@ -64,10 +64,10 @@ export default async function LoginPage() {
         </div>
 
         {/* Right panel — form */}
-        <div className="flex-1 flex flex-col justify-center px-6 py-10 sm:px-10 md:px-14">
+        <div className="flex-1 flex flex-col justify-center overflow-y-auto px-6 py-6 sm:px-10 md:px-12">
           <div className="w-full max-w-[380px] mx-auto">
             {/* Mobile logotype */}
-            <div className="mb-8 text-center md:hidden">
+            <div className="mb-5 text-center md:hidden">
               <div className="inline-flex flex-col items-center">
                 <span className="font-sans text-[24px] font-bold tracking-[0.14em] text-charcoal uppercase">
                   EIGENSU
@@ -78,10 +78,10 @@ export default async function LoginPage() {
               </div>
             </div>
 
-            <h1 className="font-display text-2xl font-bold text-charcoal mb-1">
+            <h1 className="font-display text-xl font-bold text-charcoal mb-1">
               Welcome back
             </h1>
-            <p className="text-sm text-charcoal-600 mb-7">
+            <p className="text-sm text-charcoal-600 mb-4">
               Enter your email and password to access your account.
             </p>
             <LoginForm />
