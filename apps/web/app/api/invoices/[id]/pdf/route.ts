@@ -30,11 +30,11 @@ export async function GET(
     return NextResponse.json({ error: 'Settings not configured' }, { status: 500 })
   }
 
-  const { renderInvoicePDF } = await import('@eigensu/invoice')
+  const { generateInvoicePDF } = await import('@/lib/invoice-pdf')
   const { buildInvoiceRenderData } = await import('@/lib/invoice-render-data')
 
   const renderData = buildInvoiceRenderData(invoice, settingsRow)
-  const pdfBuf = await renderInvoicePDF(renderData)
+  const pdfBuf = await generateInvoicePDF(renderData, `Invoice ${invoice.invoiceNumber}`)
 
   return new Response(new Uint8Array(pdfBuf), {
     headers: {

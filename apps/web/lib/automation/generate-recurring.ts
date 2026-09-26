@@ -109,9 +109,12 @@ export async function generateRecurringInvoices(todayIST: Date): Promise<number>
               with: { client: true, lineItems: true, bankAccount: true },
             })
             if (fullInv) {
-              const { renderInvoicePDF } = await import('@eigensu/invoice')
+              const { generateInvoicePDF } = await import('@/lib/invoice-pdf')
               const { buildInvoiceRenderData } = await import('@/lib/invoice-render-data')
-              pdfBuffer = await renderInvoicePDF(buildInvoiceRenderData(fullInv, settingsRow))
+              pdfBuffer = await generateInvoicePDF(
+                buildInvoiceRenderData(fullInv, settingsRow),
+                `Invoice ${invoiceNumber}`,
+              )
             }
           } catch (pdfErr) {
             console.error('PDF generation failed (sending without attachment):', pdfErr)

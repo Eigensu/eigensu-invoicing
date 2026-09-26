@@ -15,6 +15,13 @@
       "when": 1783172941972,
       "tag": "0001_chief_franklin_storm",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790440920141,
+      "tag": "0002_burly_whizzer",
+      "breakpoints": true
     }
   ]
 }

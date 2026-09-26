@@ -114,9 +114,12 @@ export async function sendInvoice(invoiceId: string) {
     // Generate PDF for attachment — non-fatal if render fails
     let pdfBuffer: Buffer | undefined
     try {
-      const { renderInvoicePDF } = await import('@eigensu/invoice')
+      const { generateInvoicePDF } = await import('@/lib/invoice-pdf')
       const { buildInvoiceRenderData } = await import('@/lib/invoice-render-data')
-      pdfBuffer = await renderInvoicePDF(buildInvoiceRenderData(invoice, settingsRow))
+      pdfBuffer = await generateInvoicePDF(
+        buildInvoiceRenderData(invoice, settingsRow),
+        `Invoice ${invoice.invoiceNumber}`,
+      )
     } catch (pdfErr) {
       console.error('PDF generation failed (sending without attachment):', pdfErr)
     }

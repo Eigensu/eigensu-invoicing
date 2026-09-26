@@ -271,6 +271,22 @@ export const users = pgTable('users', {
   isActive: boolean('is_active').notNull().default(true),
 })
 
+// Single-row table (like `settings`): this app has exactly one Canva
+// account connected, used to autofill and export every invoice PDF.
+export const canvaConnection = pgTable('canva_connection', {
+  id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+  accessToken: text('access_token').notNull(),
+  refreshToken: text('refresh_token').notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  scope: text('scope').notNull(),
+  brandTemplateId: text('brand_template_id').notNull(),
+  connectedByUserId: uuid('connected_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
 export const auditLog = pgTable('audit_log', {
   id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
   userId: uuid('user_id'),
@@ -365,3 +381,5 @@ export type ReminderRule = typeof reminderRules.$inferSelect
 export type Settings = typeof settings.$inferSelect
 export type User = typeof users.$inferSelect
 export type AuditLog = typeof auditLog.$inferSelect
+export type CanvaConnection = typeof canvaConnection.$inferSelect
+export type NewCanvaConnection = typeof canvaConnection.$inferInsert
