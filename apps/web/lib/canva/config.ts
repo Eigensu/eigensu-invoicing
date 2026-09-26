@@ -2,11 +2,19 @@
 // individually tagged text fields — Canva's Autofill API cannot target
 // cells inside a native Table element) is autofilled for every invoice.
 // See apps/web/lib/canva/render-data.ts for the field-label mapping.
+//
+// There is no dedicated "autofill" OAuth scope — Canva's own REST API
+// quickstart for autofill + brand templates lists this exact scope set:
+// https://www.canva.dev/docs/apps/quickstart/?app-surface=Canva+for+your+platform
 export const CANVA_OAUTH_SCOPES = [
-  'autofill:write',
-  'brandtemplate:meta:read',
   'design:content:read',
+  'design:content:write',
   'design:meta:read',
+  'brandtemplate:meta:read',
+  'brandtemplate:content:read',
+  'asset:read',
+  'asset:write',
+  'profile:read',
 ].join(' ')
 
 export const CANVA_AUTHORIZE_URL = 'https://www.canva.com/api/oauth/authorize'
